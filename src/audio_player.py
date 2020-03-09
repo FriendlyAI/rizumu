@@ -1,5 +1,5 @@
 from subprocess import Popen, PIPE
-from threading import Thread
+from threading import Thread, Event
 from time import sleep
 
 from pyaudio import PyAudio
@@ -18,10 +18,14 @@ class AudioPlayer(Thread):
         self.chunk_size = self.frame_size * self.sample_width * self.channels
 
         self.device = None
+        self.ffmpeg_process = None
         self.data_stream = None
 
-        self.stream_open = False
-        self.start_time = None
+        self.stream_open = Event()
+        self.unpaused = Event()
+        self.unpaused.set()
+
+        self.time = 0
 
     def get_devices(self):
         return [self.pyaudio.get_device_info_by_index(i)
@@ -42,30 +46,50 @@ class AudioPlayer(Thread):
 
         ffmpeg_command = ['ffmpeg', '-i', filepath, '-loglevel', 'error', '-f', 's16le', '-ac', str(self.channels),
                           '-ar', str(self.sample_rate), '-']
-        self.data_stream = Popen(ffmpeg_command, stdout=PIPE, stderr=PIPE).stdout
+
+        self.ffmpeg_process = Popen(ffmpeg_command, stdout=PIPE)
+        self.data_stream = self.ffmpeg_process.stdout
         self.device.start_stream()
 
-        self.stream_open = True
+        self.stream_open.set()
 
     def stop_stream(self):
-        self.stream_open = False
+        self.stream_open.clear()
+
+        if self.ffmpeg_process.poll():
+            self.ffmpeg_process.kill()
 
         if self.data_stream:
             self.data_stream.flush()
             self.data_stream = None
+
         self.device.stop_stream()
 
+    def pause(self):
+        self.unpaused.clear()
+
+    def unpause(self):
+        self.unpaused.set()
+
     def play_chunk(self):
-        chunk = self.data_stream.read(self.chunk_size)
-        if chunk:
-            self.device.write(chunk)
+        if self.unpaused.is_set():
+            chunk = self.data_stream.read(self.chunk_size)
+            if chunk:
+                self.time += self.frame_time / 2
+                self.device.write(chunk, self.frame_size)
+                self.time += self.frame_time / 2
+            else:
+                self.stop_stream()
         else:
-            self.stop_stream()
+            self.device.stop_stream()
+            self.unpaused.wait()
+            self.device.start_stream()
+
+    def get_fast_forward_time(self):
+        return self.device.get_write_available() / self.frame_size * self.frame_time
 
     def get_time(self):
-        if not self.start_time:
-            return -1
-        return self.device.get_time() - self.start_time
+        return self.time
 
     def close(self):
         self.stop_stream()
@@ -74,7 +98,6 @@ class AudioPlayer(Thread):
 
     def run(self):
         sleep(2)
-        self.start_time = self.device.get_time()
-        while self.stream_open:
+        while self.stream_open.is_set():
             self.play_chunk()
         self.close()
