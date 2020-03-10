@@ -53,17 +53,11 @@ class AudioPlayer(Thread):
 
         self.stream_open.set()
 
-    def stop_stream(self):
-        self.stream_open.clear()
+    def get_fast_forward_time(self):
+        return self.device.get_write_available() / self.frame_size * self.frame_time
 
-        if self.ffmpeg_process.poll():
-            self.ffmpeg_process.kill()
-
-        if self.data_stream:
-            self.data_stream.flush()
-            self.data_stream = None
-
-        self.device.stop_stream()
+    def get_time(self):
+        return self.time
 
     def pause(self):
         self.unpaused.clear()
@@ -85,11 +79,17 @@ class AudioPlayer(Thread):
             self.unpaused.wait()
             self.device.start_stream()
 
-    def get_fast_forward_time(self):
-        return self.device.get_write_available() / self.frame_size * self.frame_time
+    def stop_stream(self):
+        self.stream_open.clear()
 
-    def get_time(self):
-        return self.time
+        if self.ffmpeg_process.poll():
+            self.ffmpeg_process.kill()
+
+        if self.data_stream:
+            self.data_stream.flush()
+            self.data_stream = None
+
+        self.device.stop_stream()
 
     def close(self):
         self.stop_stream()

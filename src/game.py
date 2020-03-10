@@ -21,8 +21,7 @@ tmp/tmp.flac
 # GAME
 pygame.init()
 
-beats = {'A': [], 'B': []}
-shadows = {'A': [], 'B': []}
+beats = {}
 
 with open('tmp/out.track', 'rb') as f:
     while 1:
@@ -30,7 +29,26 @@ with open('tmp/out.track', 'rb') as f:
         if not beat_layer:
             break
         beat_time = unpack('f', f.read(4))[0]
+        if beat_layer not in beats.keys():
+            beats[beat_layer] = []
         beats[beat_layer].insert(0, beat_time)
+
+
+# used_layers = ('A', 'B', 'C', 'D', 'E')
+# layer_keys = {'A': 'D', 'B': 'F', 'C': 'J', 'D': 'K', 'E': 'L'}
+
+used_layers = ('C', 'E')
+layer_keys = {'C': 'F', 'E': 'J'}
+
+# used_layers = ('A', 'B')
+# layer_keys = {'A': 'F', 'B': 'J'}
+
+
+for key in list(beats.keys()):
+    if key not in used_layers:
+        del beats[key]
+
+shadows = {layer: [] for layer in beats.keys()}
 
 track_height = 600
 bottom_offset = 100
@@ -41,22 +59,29 @@ speed = [2, 2]
 
 height_time = 2  # sec, 10 pixels/sec = 600 pixels
 pixels_per_second = track_height / preview_length  # 400 pixels = 1 sec
-lenience = 0.06  # seconds +/- per beat
+lenience = 0.08  # seconds +/- per beat
+
 # pygame.display.set_icon(pygame.image.load('img/icon.png'))
-
 screen = pygame.display.set_mode(size)
+font = Font('font/good times.ttf', 32)
 
-num_layers = 2
+num_layers = len(beats.keys())
 
 beat_width = 150 / num_layers
 beat_height = 20
 
 layer_separation = (width - num_layers * beat_width) / (num_layers + 1)
 layer_centers = [layer_separation * (i + 1) + (beat_width * (2 * i + 1) / 2) for i in range(0, num_layers)]
-layer_keys = {'A': pygame.K_f, 'B': pygame.K_j}
+
+
+layer_labels = []
+for layer, center in zip(sorted(beats.keys()), layer_centers):
+    text = font.render(layer_keys[layer], True, (255, 255, 255))
+    text_box = text.get_rect()
+    text_box.center = center, track_height + 20
+    layer_labels.append((text, text_box))
 
 clock = Clock()
-font = Font('font/good times.ttf', 32)
 
 latency = audio_player.device.get_output_latency() * .75
 
@@ -68,7 +93,7 @@ score_label_frames = 0
 score_label_max_frames = 45
 
 score_text = None
-text_box = None
+score_text_box = None
 
 paused = False
 pause_time = 0
@@ -93,9 +118,11 @@ while 1:
         if audio_player_time != 0:
             difference = current_song_time - audio_player_time
             if abs(difference) > 0.1:
-                start += difference
-            else:
+                start += difference * .1
+            elif abs(difference) > 0.03:
                 start += difference * .05
+            else:
+                start += difference * .01
 
         current_song_time -= latency
 
@@ -134,16 +161,19 @@ while 1:
             if len(shadows[layer]) > 0 and current_song_time - .2 - latency > shadows[layer][-1]:
                 shadows[layer].pop()
 
+        for text, text_box in layer_labels:
+            screen.blit(text, text_box)
+
         if missed:
             score_text = font.render('Miss!', True, (255, 75, 75))
-            text_box = score_text.get_rect()
+            score_text_box = score_text.get_rect()
             score_label_frames = 0
 
         pygame.draw.line(screen, (75, 150, 255), (0, track_height), (width, track_height), 10)
 
         if score_text:
-            text_box.center = width / 2, height * .75 - score_label_frames
-            screen.blit(score_text, text_box)
+            score_text_box.center = width / 2, height * .75 - score_label_frames
+            screen.blit(score_text, score_text_box)
             score_label_frames += 1
             if score_label_frames > score_label_max_frames:
                 score_label_frames = 0
@@ -153,34 +183,22 @@ while 1:
 
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN:
-                if event.key == layer_keys['A'] and len(beats['A']) > 0:
-                    time_difference = abs(beats['A'][-1] - current_song_time)
-                    if time_difference < lenience:
-                        print(beats['A'][-1] - current_song_time)
-                        score_value = ceil((lenience - time_difference) * 50)
-                        beats['A'].pop()
-                        score += score_value
-
-                        score_text = font.render(f'+{score_value}', True, (255, 255, 255))
-                        text_box = score_text.get_rect()
-                        score_label_frames = 0
-
-                elif event.key == layer_keys['B'] and len(beats['B']) > 0:
-                    time_difference = abs(beats['B'][-1] - current_song_time)
-                    if time_difference < lenience:
-                        print(beats['B'][-1] - current_song_time)
-                        score_value = ceil((lenience - time_difference) * 50)
-                        beats['B'].pop()
-                        score += score_value
-
-                        score_text = font.render(f'+{score_value}', True, (255, 255, 255))
-                        text_box = score_text.get_rect()
-                        score_label_frames = 0
-
-                elif event.key == pygame.K_p:
+                if event.key == pygame.K_ESCAPE:
                     audio_player.pause()
                     paused = True
                     pause_time = time()
+                else:
+                    for key in beats.keys():
+                        if event.key == ord(layer_keys[key]) + 32 and len(beats[key]) > 0:
+                            time_difference = abs(beats[key][-1] - current_song_time)
+                            if time_difference < lenience:
+                                score_value = ceil((lenience - time_difference) * 50)
+                                beats[key].pop()
+                                score += score_value
+
+                                score_text = font.render(f'+{score_value}', True, (255, 255, 255))
+                                score_text_box = score_text.get_rect()
+                                score_label_frames = 0
 
             elif event.type == pygame.QUIT:
                 audio_player.unpause()
@@ -195,7 +213,7 @@ while 1:
                 audio_player.unpause()
                 audio_player.stream_open.clear()
                 close_game()
-            elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 audio_player.unpause()
                 paused = False
                 start += time() - pause_time
