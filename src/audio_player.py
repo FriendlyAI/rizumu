@@ -1,4 +1,4 @@
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, DEVNULL
 from threading import Thread, Event
 from time import sleep
 
@@ -6,7 +6,7 @@ from pyaudio import PyAudio
 
 
 class AudioPlayer(Thread):
-    def __init__(self):
+    def __init__(self, delay_time):
         super().__init__()
         self.pyaudio = PyAudio()
 
@@ -26,6 +26,7 @@ class AudioPlayer(Thread):
         self.unpaused.set()
 
         self.time = 0
+        self.delay_time = delay_time
 
     def get_devices(self):
         return [self.pyaudio.get_device_info_by_index(i)
@@ -47,7 +48,7 @@ class AudioPlayer(Thread):
         ffmpeg_command = ['ffmpeg', '-i', filepath, '-loglevel', 'error', '-f', 's16le', '-ac', str(self.channels),
                           '-ar', str(self.sample_rate), '-']
 
-        self.ffmpeg_process = Popen(ffmpeg_command, stdout=PIPE)
+        self.ffmpeg_process = Popen(ffmpeg_command, stdout=PIPE, stderr=DEVNULL)
         self.data_stream = self.ffmpeg_process.stdout
         self.device.start_stream()
 
@@ -97,7 +98,7 @@ class AudioPlayer(Thread):
         self.pyaudio.terminate()
 
     def run(self):
-        sleep(2)
+        sleep(self.delay_time)
         while self.stream_open.is_set():
             self.play_chunk()
         self.close()
