@@ -24,18 +24,19 @@ class Game:
 
         self.num_layers = max(len(self.layers.keys()), 1)
 
-        self.track_height = 600
+        self.track_height = 700
         self.bottom_offset = 100
         self.preview_length = 1.5  # seconds
 
-        size = self.width, self.height = 400, self.track_height + self.bottom_offset
+        size = self.width, self.height = 500, self.track_height + self.bottom_offset
 
         self.pixels_per_second = self.track_height / self.preview_length  # 400 pixels = 1 sec
         self.lenience = 0.05 + .005 * self.num_layers  # seconds +/- per beat
 
         # pygame.display.set_icon(pygame.image.load('img/icon.png'))
         self.screen = pygame.display.set_mode(size)
-        self.font = Font('font/good times.ttf', 24)
+        self.general_font = Font('font/good times.ttf', 24)
+        self.large_font = Font('font/good times.ttf', 36)
 
         self.beat_width = self.track_height / 4 / self.num_layers
         self.beat_height = self.pixels_per_second / 25
@@ -45,7 +46,7 @@ class Game:
                               for i in range(0, self.num_layers)]
 
         for layer, center in zip(sorted(self.layers.keys()), self.layer_centers):
-            self.layers[layer].generate_layer_label(self.font, center, self.track_height)
+            self.layers[layer].generate_layer_label(self.general_font, center, self.track_height)
 
         self.clock = Clock()
 
@@ -101,9 +102,7 @@ class Game:
 
             if audio_player_time != 0:
                 difference = current_song_time - audio_player_time
-                if abs(difference) > 0.1:
-                    self.start_time += difference * .1
-                elif abs(difference) > 0.03:
+                if abs(difference) > 0.03:
                     self.start_time += difference * .05
                 else:
                     self.start_time += difference * .01
@@ -119,14 +118,14 @@ class Game:
                              (self.width, 2 * self.track_height / 3), 1)
 
             # Baseline
-            pygame.draw.line(self.screen, (128, 128, 128), (0, self.track_height), (self.width, self.track_height), 9)
+            pygame.draw.line(self.screen, (224, 224, 224), (0, self.track_height), (self.width, self.track_height), 9)
 
             missed = False
             for layer, center in zip(sorted(self.layers.keys()), self.layer_centers):
                 layer_object = self.layers[layer]
 
                 # Draw layer track
-                pygame.draw.line(self.screen, layer_object.color, (center, 0), (center, self.track_height), 3)
+                pygame.draw.line(self.screen, layer_object.color, (center, 0), (center, self.track_height), 5)
 
                 # Draw beats
                 for i in range(layer_object.count_remaining_beats() - 1, -1, -1):
@@ -165,7 +164,7 @@ class Game:
                 self.screen.blit(layer_object.key_label_text, layer_object.key_label_text_box)
 
             if missed:
-                self.score_text = self.font.render('miss', True, (255, 75, 75))
+                self.score_text = self.large_font.render('miss', True, (255, 75, 75))
                 self.score_text_box = self.score_text.get_rect()
                 self.score_label_frames = 0
 
@@ -185,7 +184,7 @@ class Game:
                                     layer_object.remove_last_beat()
                                     self.score += score_value
 
-                                    self.score_text = self.font.render(f'+{score_value}', True, (255, 255, 255))
+                                    self.score_text = self.large_font.render(f'+{score_value}', True, (255, 255, 255))
                                     self.score_text_box = self.score_text.get_rect()
                                     self.score_label_frames = 0
 
@@ -195,7 +194,7 @@ class Game:
                     return
 
             if self.score_text:
-                self.score_text_box.center = self.width / 2, 100 - self.score_label_frames
+                self.score_text_box.center = self.width / 2, 150 - self.score_label_frames
                 self.screen.blit(self.score_text, self.score_text_box)
                 self.score_label_frames += 1
                 if self.score_label_frames > self.score_label_max_frames:
@@ -204,7 +203,10 @@ class Game:
 
             pygame.display.flip()
 
-            pygame.display.set_caption(f'{self.clock.get_fps():.1f} | {current_song_time:.1f} | {self.score}')
+            display_time = current_song_time if current_song_time > 0 else 0
+            pygame.display.set_caption(f'{self.clock.get_fps():.1f} | '
+                                       f'{int(display_time // 60)}:{display_time % 60:04.1f} | '
+                                       f'{self.score}')
 
         else:
             for event in pygame.event.get():
@@ -225,7 +227,7 @@ class Game:
         if self.final_score_text is None:
             self.screen.fill((0, 0, 0))
 
-            self.final_score_text = self.font.render(f'{self.score}', True, (255, 255, 255))
+            self.final_score_text = self.large_font.render(f'{self.score}', True, (255, 255, 255))
             self.final_score_text_box = self.final_score_text.get_rect()
             self.final_score_text_box.center = self.width / 2, self.height / 2
             self.screen.blit(self.final_score_text, self.final_score_text_box)
