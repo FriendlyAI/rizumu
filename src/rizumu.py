@@ -21,5 +21,7 @@ enabled_layers_keys = {'A': 's', 'B': 'd', 'C': 'j', 'D': 'k', 'E': 'l'}
 # enabled_layers_keys = {'A': 'f', 'B': 'j'}
 # enabled_layers_keys = {'C': 'f', 'D': 'j', 'E': 'k'}
 
+print(f'Device delay: {audio_player.device.get_output_latency()}')
+
 game = Game(audio_player, Track(argv[1]), enabled_layers_keys)
 game.start_game()

@@ -1,5 +1,5 @@
 from struct import unpack
-from sys import exit, stdout
+from sys import exit
 from time import time
 
 import pygame
@@ -50,11 +50,11 @@ class Game:
 
         self.clock = Clock()
 
-        self.latency = audio_player.device.get_output_latency() * .75
+        self.latency = audio_player.device.get_output_latency() * 0
         self.average_time_difference = 0
 
         self.score = 0
-        self.num_perfect = self.num_great = self.num_ok = 0
+        self.num_perfect = self.num_great = self.num_ok = self.num_missed = 0
         self.perfect_color = (70, 175, 255)
         self.great_color = (40, 255, 115)
         self.ok_color = (255, 200, 40)
@@ -142,8 +142,6 @@ class Game:
             if audio_player_time != 0:
                 self.average_time_difference += (current_song_time - audio_player_time - self.average_time_difference) / 30
                 self.start_time += self.average_time_difference * .05
-                stdout.write(f'\r{self.average_time_difference}')
-                stdout.flush()
 
             current_song_time -= self.latency
 
@@ -168,15 +166,15 @@ class Game:
                 # Draw beats
                 for i in range(layer_object.count_remaining_beats() - 1, -1, -1):
                     beat = layer_object.get_beat(i)
-                    if current_song_time - .1 - self.latency <= beat.time <= current_song_time + self.preview_length:
-                        y = (self.preview_length - beat.time + current_song_time) * self.pixels_per_second - self.beat_height / 2
-
-                        if abs(y - self.track_height) / self.pixels_per_second <= self.lenience:
+                    if current_song_time - self.lenience - .1 <= beat.time:
+                        if abs(current_song_time - beat.time) <= self.lenience:
                             beat.set_color((50, 200, 50))
-                        elif (y - self.track_height) / self.pixels_per_second > self.lenience:  # missed, convert to shadow
+                        elif current_song_time - beat.time > self.lenience:  # missed, convert to shadow
                             beat.set_color((255, 150, 150))
                             layer_object.insert_shadow(beat)
                             layer_object.remove_last_beat()
+
+                            self.num_missed += 1
                             missed = True
 
                         pygame.draw.rect(self.screen, beat.color,
@@ -185,17 +183,21 @@ class Game:
                                           self.beat_width,
                                           self.beat_height))
 
-                # Draw shadows
-                for i in range(layer_object.count_shadows() - 1, -1, -1):
-                    shadow = layer_object.get_shadow(i)
-                    pygame.draw.rect(self.screen, shadow.color,
-                                     (center - self.beat_width / 2,
-                                      self.pixels_per_second * (self.preview_length - shadow.time + current_song_time) - self.beat_height / 2,
-                                      self.beat_width,
-                                      self.beat_height))
+                    elif beat.time > current_song_time + self.preview_length:
+                        break
 
-                if layer_object.count_shadows() > 0 and current_song_time - self.bottom_offset / self.pixels_per_second - self.latency > layer_object.get_shadow(-1).time:
-                    layer_object.remove_last_shadow()
+                # Draw shadows
+                if layer_object.count_shadows() > 0:
+                    for i in range(layer_object.count_shadows() - 1, -1, -1):
+                        shadow = layer_object.get_shadow(i)
+                        pygame.draw.rect(self.screen, shadow.color,
+                                         (center - self.beat_width / 2,
+                                          self.pixels_per_second * (self.preview_length - shadow.time + current_song_time) - self.beat_height / 2,
+                                          self.beat_width,
+                                          self.beat_height))
+
+                     if current_song_time - self.bottom_offset / self.pixels_per_second > layer_object.get_shadow(-1).time:
+                        layer_object.remove_last_shadow()
 
             for layer in self.layers.keys():
                 layer_object = self.layers[layer]
@@ -209,8 +211,8 @@ class Game:
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        self.audio_player.pause()
                         self.paused = True
+                        self.audio_player.pause()
                         self.pause_time = time()
                     else:
                         for layer in self.layers.keys():
@@ -232,7 +234,7 @@ class Game:
                     return
 
             if self.score_text:
-                self.score_text_box.center = self.width / 2, self.height - 40 - self.score_label_frames / 2
+                self.score_text_box.center = self.width / 2, self.height - 45 - self.score_label_frames / 2
                 self.screen.blit(self.score_text, self.score_text_box)
                 self.score_label_frames += 1
                 if self.score_label_frames > self.score_label_max_frames:
@@ -256,8 +258,8 @@ class Game:
                     return
 
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    self.audio_player.unpause()
                     self.paused = False
+                    self.audio_player.unpause()
                     self.start_time += time() - self.pause_time
 
         self.clock.tick(60)
@@ -265,11 +267,6 @@ class Game:
     def draw_score_screen(self):
         if self.final_score_text is None:
             self.screen.fill((0, 0, 0))
-
-            self.final_score_text = self.large_font.render(f'final score: {self.score}', True, (255, 255, 255))
-            self.final_score_text_box = self.final_score_text.get_rect()
-            self.final_score_text_box.center = self.width / 2, self.height / 2 + 140
-            self.screen.blit(self.final_score_text, self.final_score_text_box)
 
             self.final_score_perfect_text = self.large_font.render(f'perfect: {self.num_perfect}', True, self.perfect_color)
             self.final_score_perfect_text_box = self.final_score_perfect_text.get_rect()
@@ -288,15 +285,20 @@ class Game:
 
             num_hit = self.num_perfect + self.num_great + self.num_ok
 
-            self.final_score_missed_text = self.large_font.render(f'missed: {self.total_num_beats - num_hit}', True, self.missed_color)
+            self.final_score_missed_text = self.large_font.render(f'missed: {self.num_missed}', True, self.missed_color)
             self.final_score_missed_text_box = self.final_score_missed_text.get_rect()
             self.final_score_missed_text_box.center = self.width / 2, self.height / 2 - 100
             self.screen.blit(self.final_score_missed_text, self.final_score_missed_text_box)
 
-            self.final_score_accuracy_text = self.large_font.render(f'Accuracy: {(num_hit / max(1, self.total_num_beats) * 100):.1f}%', True, (255, 255, 255))
+            self.final_score_accuracy_text = self.large_font.render(f'Accuracy: {(num_hit / max(1, self.num_missed + num_hit) * 100):.1f}%', True, (255, 255, 255))
             self.final_score_accuracy_text_box = self.final_score_accuracy_text.get_rect()
             self.final_score_accuracy_text_box.center = self.width / 2, self.height / 2 + 20
             self.screen.blit(self.final_score_accuracy_text, self.final_score_accuracy_text_box)
+
+            self.final_score_text = self.large_font.render(f'final score: {self.score}', True, (255, 255, 255))
+            self.final_score_text_box = self.final_score_text.get_rect()
+            self.final_score_text_box.center = self.width / 2, self.height / 2 + 140
+            self.screen.blit(self.final_score_text, self.final_score_text_box)
 
             pygame.display.flip()
 
@@ -327,8 +329,5 @@ class Game:
         self.display_loop()
 
     def close_game(self):
-        print(f'\nPerfect: {self.num_perfect}\nGreat: {self.num_great}\nOK: {self.num_ok}')
-        print(f'Accuracy: {((self.num_perfect + self.num_great + self.num_ok) / max(1, self.total_num_beats) * 100):.1f}%')
-        print(f'Final score: {self.score}')
         pygame.quit()
         exit()
