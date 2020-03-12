@@ -1,6 +1,5 @@
-import sys
-from math import ceil
 from struct import unpack
+from sys import exit, stdout
 from time import time
 
 import pygame
@@ -20,12 +19,13 @@ class Game:
         for i, layer in enumerate(enabled_layers_keys.keys()):
             self.layers[layer] = Layer(layer, enabled_layers_keys[layer])
 
+        self.total_num_beats = 0
         self.read_in_beats(self.track.track_filepath)
 
         self.num_layers = max(len(self.layers.keys()), 1)
 
-        self.track_height = 700
-        self.bottom_offset = 100
+        self.track_height = 650
+        self.bottom_offset = 150
         self.preview_length = 1.5  # seconds
 
         size = self.width, self.height = 500, self.track_height + self.bottom_offset
@@ -35,7 +35,7 @@ class Game:
 
         # pygame.display.set_icon(pygame.image.load('img/icon.png'))
         self.screen = pygame.display.set_mode(size)
-        self.general_font = Font('font/good times.ttf', 24)
+        self.generic_font = Font('font/good times.ttf', 24)
         self.large_font = Font('font/good times.ttf', 36)
 
         self.beat_width = self.track_height / 4 / self.num_layers
@@ -46,22 +46,25 @@ class Game:
                               for i in range(0, self.num_layers)]
 
         for layer, center in zip(sorted(self.layers.keys()), self.layer_centers):
-            self.layers[layer].generate_layer_label(self.general_font, center, self.track_height)
+            self.layers[layer].generate_layer_label(self.generic_font, center, self.track_height)
 
         self.clock = Clock()
 
         self.latency = audio_player.device.get_output_latency() * .75
+        self.average_time_difference = 0
 
         self.score = 0
+        self.num_perfect = self.num_great = self.num_ok = 0
+        self.perfect_color = (70, 175, 255)
+        self.great_color = (40, 255, 115)
+        self.ok_color = (255, 200, 40)
+        self.missed_color = (255, 75, 75)
 
         self.score_label_frames = 0
-        self.score_label_max_frames = 45
+        self.score_label_max_frames = 30
 
         self.score_text = None
         self.score_text_box = None
-
-        self.final_score_text = None
-        self.final_score_text_box = None
 
         self.paused = False
         self.pause_time = 0
@@ -69,6 +72,26 @@ class Game:
         self.start_time = 0
         self.playing_screen = True
         self.score_screen = False
+
+        # Final score screen
+
+        self.final_score_text = None
+        self.final_score_text_box = None
+
+        self.final_score_perfect_text = None
+        self.final_score_perfect_text_box = None
+
+        self.final_score_great_text = None
+        self.final_score_great_text_box = None
+
+        self.final_score_ok_text = None
+        self.final_score_ok_text_box = None
+
+        self.final_score_missed_text = None
+        self.final_score_missed_text_box = None
+
+        self.final_score_accuracy_text = None
+        self.final_score_accuracy_text_box = None
 
     def read_in_beats(self, track_filepath):
         with open(track_filepath, 'rb') as f:
@@ -88,7 +111,23 @@ class Game:
                 del self.layers[layer]
             else:
                 print(f'{layer}: {layer_object.num_beats} beats')
-        print(f'Total: {sum([layer.num_beats for layer in self.layers.values()])}')
+
+        self.total_num_beats = sum([layer.num_beats for layer in self.layers.values()])
+        print(f'Total: {self.total_num_beats}')
+
+    def score_beat(self, time_difference):
+        if time_difference < self.lenience * .5:
+            self.score += 3
+            self.num_perfect += 1
+            return 'perfect!', self.perfect_color
+        elif time_difference <= self.lenience * .8:
+            self.score += 2
+            self.num_great += 1
+            return 'great!', self.great_color
+        else:
+            self.score += 1
+            self.num_ok += 1
+            return 'ok!', self.ok_color
 
     def draw_playing_screen(self):
         if not self.audio_player.stream_open.is_set():
@@ -101,11 +140,10 @@ class Game:
             current_song_time = time() - self.start_time
 
             if audio_player_time != 0:
-                difference = current_song_time - audio_player_time
-                if abs(difference) > 0.03:
-                    self.start_time += difference * .05
-                else:
-                    self.start_time += difference * .01
+                self.average_time_difference += (current_song_time - audio_player_time - self.average_time_difference) / 30
+                self.start_time += self.average_time_difference * .05
+                stdout.write(f'\r{self.average_time_difference}')
+                stdout.flush()
 
             current_song_time -= self.latency
 
@@ -156,7 +194,7 @@ class Game:
                                       self.beat_width,
                                       self.beat_height))
 
-                if layer_object.count_shadows() > 0 and current_song_time - .2 - self.latency > layer_object.get_shadow(-1).time:
+                if layer_object.count_shadows() > 0 and current_song_time - self.bottom_offset / self.pixels_per_second - self.latency > layer_object.get_shadow(-1).time:
                     layer_object.remove_last_shadow()
 
             for layer in self.layers.keys():
@@ -164,7 +202,7 @@ class Game:
                 self.screen.blit(layer_object.key_label_text, layer_object.key_label_text_box)
 
             if missed:
-                self.score_text = self.large_font.render('miss', True, (255, 75, 75))
+                self.score_text = self.generic_font.render('miss!', True, self.missed_color)
                 self.score_text_box = self.score_text.get_rect()
                 self.score_label_frames = 0
 
@@ -179,22 +217,22 @@ class Game:
                             layer_object = self.layers[layer]
                             if event.key == ord(layer_object.key) and layer_object.count_remaining_beats() > 0:
                                 time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
-                                if time_difference < self.lenience:
-                                    score_value = ceil((self.lenience - time_difference) * 50)
+                                if time_difference <= self.lenience:
+                                    beat_accuracy, color = self.score_beat(time_difference)
                                     layer_object.remove_last_beat()
-                                    self.score += score_value
 
-                                    self.score_text = self.large_font.render(f'+{score_value}', True, (255, 255, 255))
+                                    self.score_text = self.generic_font.render(beat_accuracy, True, color)
                                     self.score_text_box = self.score_text.get_rect()
                                     self.score_label_frames = 0
 
                 elif event.type == pygame.QUIT:
                     self.audio_player.stream_open.clear()
                     self.playing_screen = False
+                    self.score_screen = True
                     return
 
             if self.score_text:
-                self.score_text_box.center = self.width / 2, 150 - self.score_label_frames
+                self.score_text_box.center = self.width / 2, self.height - 40 - self.score_label_frames / 2
                 self.screen.blit(self.score_text, self.score_text_box)
                 self.score_label_frames += 1
                 if self.score_label_frames > self.score_label_max_frames:
@@ -214,6 +252,7 @@ class Game:
                     self.audio_player.unpaused.set()
                     self.audio_player.stream_open.clear()
                     self.playing_screen = False
+                    self.score_screen = True
                     return
 
                 elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -227,10 +266,37 @@ class Game:
         if self.final_score_text is None:
             self.screen.fill((0, 0, 0))
 
-            self.final_score_text = self.large_font.render(f'{self.score}', True, (255, 255, 255))
+            self.final_score_text = self.large_font.render(f'final score: {self.score}', True, (255, 255, 255))
             self.final_score_text_box = self.final_score_text.get_rect()
-            self.final_score_text_box.center = self.width / 2, self.height / 2
+            self.final_score_text_box.center = self.width / 2, self.height / 2 + 140
             self.screen.blit(self.final_score_text, self.final_score_text_box)
+
+            self.final_score_perfect_text = self.large_font.render(f'perfect: {self.num_perfect}', True, self.perfect_color)
+            self.final_score_perfect_text_box = self.final_score_perfect_text.get_rect()
+            self.final_score_perfect_text_box.center = self.width / 2, self.height / 2 - 250
+            self.screen.blit(self.final_score_perfect_text, self.final_score_perfect_text_box)
+
+            self.final_score_great_text = self.large_font.render(f'great: {self.num_great}', True, self.great_color)
+            self.final_score_great_text_box = self.final_score_great_text.get_rect()
+            self.final_score_great_text_box.center = self.width / 2, self.height / 2 - 200
+            self.screen.blit(self.final_score_great_text, self.final_score_great_text_box)
+
+            self.final_score_ok_text = self.large_font.render(f'ok: {self.num_ok}', True, self.ok_color)
+            self.final_score_ok_text_box = self.final_score_ok_text.get_rect()
+            self.final_score_ok_text_box.center = self.width / 2, self.height / 2 - 150
+            self.screen.blit(self.final_score_ok_text, self.final_score_ok_text_box)
+
+            num_hit = self.num_perfect + self.num_great + self.num_ok
+
+            self.final_score_missed_text = self.large_font.render(f'missed: {self.total_num_beats - num_hit}', True, self.missed_color)
+            self.final_score_missed_text_box = self.final_score_missed_text.get_rect()
+            self.final_score_missed_text_box.center = self.width / 2, self.height / 2 - 100
+            self.screen.blit(self.final_score_missed_text, self.final_score_missed_text_box)
+
+            self.final_score_accuracy_text = self.large_font.render(f'Accuracy: {(num_hit / max(1, self.total_num_beats) * 100):.1f}%', True, (255, 255, 255))
+            self.final_score_accuracy_text_box = self.final_score_accuracy_text.get_rect()
+            self.final_score_accuracy_text_box.center = self.width / 2, self.height / 2 + 20
+            self.screen.blit(self.final_score_accuracy_text, self.final_score_accuracy_text_box)
 
             pygame.display.flip()
 
@@ -261,6 +327,8 @@ class Game:
         self.display_loop()
 
     def close_game(self):
+        print(f'\nPerfect: {self.num_perfect}\nGreat: {self.num_great}\nOK: {self.num_ok}')
+        print(f'Accuracy: {((self.num_perfect + self.num_great + self.num_ok) / max(1, self.total_num_beats) * 100):.1f}%')
         print(f'Final score: {self.score}')
         pygame.quit()
-        sys.exit()
+        exit()
