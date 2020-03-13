@@ -10,7 +10,7 @@ from layer import Layer
 
 
 class Game:
-    def __init__(self, audio_player, track, enabled_layers_keys):
+    def __init__(self, audio_player, track, enabled_layers_keys, preview_length):
         pygame.init()
 
         self.audio_player = audio_player
@@ -26,19 +26,19 @@ class Game:
 
         self.track_height = 650
         self.bottom_offset = 150
-        self.preview_length = 1.5  # seconds
+        self.preview_length = preview_length  # seconds
 
         size = self.width, self.height = 500, self.track_height + self.bottom_offset
 
         self.pixels_per_second = self.track_height / self.preview_length  # 400 pixels = 1 sec
-        self.lenience = 0.05 + .005 * self.num_layers  # seconds +/- per beat
+        self.lenience = 0.055 + .0025 * self.num_layers  # seconds +/- per beat
 
         # pygame.display.set_icon(pygame.image.load('img/icon.png'))
         self.screen = pygame.display.set_mode(size)
         self.generic_font = Font('font/good times.ttf', 24)
         self.large_font = Font('font/good times.ttf', 36)
 
-        self.beat_width = self.track_height / 4 / self.num_layers
+        self.beat_width = self.track_height / 3 / self.num_layers
         self.beat_height = self.pixels_per_second / 25
 
         self.layer_separation = (self.width - self.num_layers * self.beat_width) / (self.num_layers + 1)
@@ -140,7 +140,7 @@ class Game:
             current_song_time = time() - self.start_time
 
             if audio_player_time != 0:
-                self.average_time_difference += (current_song_time - audio_player_time - self.average_time_difference) / 30
+                self.average_time_difference += (current_song_time - audio_player_time - self.average_time_difference) / 60
                 self.start_time += self.average_time_difference * .05
 
             current_song_time -= self.latency
@@ -196,7 +196,7 @@ class Game:
                                           self.beat_width,
                                           self.beat_height))
 
-                     if current_song_time - self.bottom_offset / self.pixels_per_second > layer_object.get_shadow(-1).time:
+                    if current_song_time - self.bottom_offset / self.pixels_per_second > layer_object.get_shadow(-1).time:
                         layer_object.remove_last_shadow()
 
             for layer in self.layers.keys():
@@ -217,6 +217,7 @@ class Game:
                     else:
                         for layer in self.layers.keys():
                             layer_object = self.layers[layer]
+                            # if layer_object.count_remaining_beats() > 0:  # practice mode
                             if event.key == ord(layer_object.key) and layer_object.count_remaining_beats() > 0:
                                 time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
                                 if time_difference <= self.lenience:
