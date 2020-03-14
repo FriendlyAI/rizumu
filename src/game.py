@@ -132,14 +132,17 @@ class Game:
         if time_difference < self.lenience * .5:
             self.score += int(30 * self.combo_multiplier)
             self.num_perfect += 1
+            self.combo += 3
             return 'perfect!', self.perfect_color
         elif time_difference <= self.lenience * .8:
             self.score += int(20 * self.combo_multiplier)
             self.num_great += 1
+            self.combo += 2
             return 'great!', self.great_color
         else:
             self.score += int(10 * self.combo_multiplier)
             self.num_ok += 1
+            self.combo += 1
             return 'ok!', self.ok_color
 
     def draw_playing_screen(self):
@@ -149,6 +152,7 @@ class Game:
             return
 
         if not self.paused:
+            # Calculate time
             audio_player_time = self.audio_player.get_time()
             current_song_time = time() - self.start_time
 
@@ -158,32 +162,33 @@ class Game:
 
             current_song_time -= self.latency
 
+            # Reset screen
             self.screen.fill((0, 0, 0))
 
-            # .5, 1 second lines
+            # Draw 1/3 and 2/3 reference lines
             pygame.draw.line(self.screen, (128, 128, 128), (0, self.track_height / 3),
                              (self.width, self.track_height / 3), 1)
             pygame.draw.line(self.screen, (128, 128, 128), (0, 2 * self.track_height / 3),
                              (self.width, 2 * self.track_height / 3), 1)
 
-            # Baseline
+            # Draw baseline
             pygame.draw.line(self.screen, (255, 255, 255), (0, self.track_height), (self.width, self.track_height), 9)
 
             # Draw combo progress bar
-            if self.combo >= 30:
+            if self.combo >= 75:
                 combo_color = self.perfect_color
                 self.combo_multiplier = 2.0
-            elif self.combo >= 20:
+            elif self.combo >= 50:
                 combo_color = self.great_color
                 self.combo_multiplier = 1.5
-            elif self.combo >= 10:
+            elif self.combo >= 25:
                 combo_color = self.ok_color
                 self.combo_multiplier = 1.2
             else:
                 combo_color = (255, 255, 255)
                 self.combo_multiplier = 1.0
 
-            pygame.draw.line(self.screen, combo_color, (0, self.track_height + 7), (self.width * min(30, self.combo) / 30, self.track_height + 7), 5)
+            pygame.draw.line(self.screen, combo_color, (0, self.track_height + 7), (self.width * min(75, self.combo) / 75, self.track_height + 7), 5)
 
             # Draw layer key labels
             for layer in self.enabled_layers:
@@ -257,6 +262,7 @@ class Game:
                     if current_song_time - self.bottom_offset / self.pixels_per_second > layer_object.get_shadow(-1).time:
                         layer_object.remove_last_shadow()
 
+            # Check events
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE and current_song_time > 0:
@@ -266,7 +272,6 @@ class Game:
                     else:
                         for layer in self.enabled_layers:
                             layer_object = self.layers[layer]
-                            # if layer_object.count_remaining_beats() > 0:  # practice mode
                             if event.key == ord(layer_object.key):
                                 layer_object.set_line_thickness(7)
                                 if layer_object.count_remaining_beats() > 0:
@@ -278,8 +283,6 @@ class Game:
                                         self.hit_text = self.small_font.render(beat_accuracy, True, color)
                                         self.hit_text_box = self.hit_text.get_rect()
                                         self.hit_text_frames = 0
-
-                                        self.combo += 1
                                 break
 
                 elif event.type == pygame.KEYUP:
@@ -311,12 +314,12 @@ class Game:
                     self.hit_text_frames = 0
                     self.hit_text = None
 
+            # Update display
             pygame.display.flip()
 
+            # Update title with FPS and time
             display_time = current_song_time if current_song_time > 0 else 0
-            pygame.display.set_caption(f'{self.clock.get_fps():.1f} | '
-                                       f'{int(display_time // 60)}:{display_time % 60:04.1f} | '
-                                       f'{self.score}')
+            pygame.display.set_caption(f'{self.clock.get_fps():.1f} | {int(display_time // 60)}:{display_time % 60:04.1f}')
 
         else:
             for event in pygame.event.get():
@@ -364,14 +367,14 @@ class Game:
             self.final_score_accuracy_text_box.center = self.width / 2, self.height / 2 + 20
             self.screen.blit(self.final_score_accuracy_text, self.final_score_accuracy_text_box)
 
-            self.final_score_text = self.large_font.render(f'final score: {self.score}', True, (255, 255, 255))
+            self.final_score_text = self.large_font.render(f'score: {self.score}', True, (255, 255, 255))
             self.final_score_text_box = self.final_score_text.get_rect()
             self.final_score_text_box.center = self.width / 2, self.height / 2 + 140
             self.screen.blit(self.final_score_text, self.final_score_text_box)
 
             pygame.display.flip()
 
-            pygame.display.set_caption(f'Final Score: {self.score}')
+            pygame.display.set_caption(f'Score: {self.score}')
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
