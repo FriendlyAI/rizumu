@@ -6,7 +6,8 @@ class Track:
         self.title = None
         self.artist = None
         self.album = None
-        self.duration = 0
+        self.duration = 300
+        # self.duration = 0
         self.num_beats = [0] * 6
         self.difficulty = None
         self.high_scores = {}
