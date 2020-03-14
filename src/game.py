@@ -1,5 +1,4 @@
 from struct import unpack
-from sys import exit
 from time import time
 
 import pygame
@@ -24,7 +23,7 @@ class Game:
         self.total_num_beats = 0
         self.read_in_beats(self.track.track_filepath)
 
-        self.num_layers = max(len(self.enabled_layers), 1)
+        self.num_layers = max(len(self.layers.keys()), 1)
 
         self.track_height = 600
         self.bottom_offset = 200
@@ -192,8 +191,9 @@ class Game:
 
             # Draw layer key labels
             for layer in self.enabled_layers:
-                layer_object = self.layers[layer]
-                self.screen.blit(layer_object.key_label_text, layer_object.key_label_text_box)
+                layer_object = self.layers.get(layer, None)
+                if layer_object:
+                    self.screen.blit(layer_object.key_label_text, layer_object.key_label_text_box)
 
             # Draw progress bar
             pygame.draw.line(self.screen, (255, 255, 255), (0, self.height - 3), (self.width * max(0, int(current_song_time)) / self.track.duration, self.height - 3), 5)
@@ -401,5 +401,4 @@ class Game:
         self.display_loop()
 
     def close_game(self):
-        pygame.quit()
-        exit()
+        pass
