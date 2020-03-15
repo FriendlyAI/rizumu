@@ -3,21 +3,19 @@ from time import time
 
 import pygame
 from pygame.font import Font
-from pygame.time import Clock
 
 from layer import Layer
+from util import ALL_LAYERS, seconds_to_readable_time
 
 
 class Game:
-    def __init__(self, audio_player, track, enabled_layers_keys, preview_length, prune_unused_layers):
-        pygame.init()
-
+    def __init__(self, clock, audio_player, track, enabled_layers_keys, preview_length, prune_unused_layers):
         self.audio_player = audio_player
         self.track = track
         self.layers = {}
         self.enabled_layers = enabled_layers_keys.keys()
         self.prune_unused_layers = prune_unused_layers
-        for layer in ('A', 'B', 'C', 'D', 'E', 'F'):
+        for layer in ALL_LAYERS:
             self.layers[layer] = Layer(layer, enabled_layers_keys.get(layer, None))
 
         self.total_num_beats = 0
@@ -36,9 +34,9 @@ class Game:
 
         # pygame.display.set_icon(pygame.image.load('img/icon.png'))
         self.screen = pygame.display.set_mode(size)
-        self.generic_font = Font('font/good times.ttf', 24)
-        self.large_font = Font('font/good times.ttf', 36)
-        self.small_font = Font('font/good times.ttf', 18)
+        self.generic_font = Font('font/good_times_ascii.ttf', 24)
+        self.large_font = Font('font/good_times_ascii.ttf', 36)
+        self.small_font = Font('font/good_times_ascii.ttf', 18)
 
         self.beat_width = self.track_height / 3 / self.num_layers
         self.beat_height = self.pixels_per_second / 25
@@ -50,7 +48,7 @@ class Game:
         for layer, center in zip(sorted(self.layers.keys()), self.layer_centers):
             self.layers[layer].generate_layer_label(self.generic_font, center, self.track_height)
 
-        self.clock = Clock()
+        self.clock = clock
 
         self.latency = audio_player.device.get_output_latency() * 0
         self.average_time_difference = 0
@@ -116,7 +114,7 @@ class Game:
                 if beat_layer in self.enabled_layers:
                     self.layers[beat_layer].insert_beat(beat_time)
 
-        for layer in ('A', 'B', 'C', 'D', 'E', 'F'):
+        for layer in ALL_LAYERS:
             layer_object = self.layers[layer]
             layer_object.count_beats()
             if self.prune_unused_layers and (layer_object.num_beats == 0 or layer not in self.enabled_layers):
@@ -318,8 +316,7 @@ class Game:
             pygame.display.flip()
 
             # Update title with FPS and time
-            display_time = current_song_time if current_song_time > 0 else 0
-            pygame.display.set_caption(f'{self.clock.get_fps():.1f} | {int(display_time // 60)}:{display_time % 60:04.1f}')
+            pygame.display.set_caption(f'{self.clock.get_fps():.1f} | {seconds_to_readable_time(current_song_time)}')
 
         else:
             for event in pygame.event.get():
@@ -397,7 +394,7 @@ class Game:
     def start_game(self):
         self.audio_player.open_audio(self.track.audio_filepath)
         self.start_time = time() + self.audio_player.delay_time - self.audio_player.get_fast_forward_time()  # 3 second pre-delay
-        self.audio_player.start()
+        self.audio_player.play()
         self.display_loop()
 
     def close_game(self):

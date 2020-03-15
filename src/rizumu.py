@@ -1,27 +1,20 @@
-from subprocess import Popen
-from sys import argv
+# -*- coding: utf-8 -*-
+from os import getcwd, mkdir
+from sys import exit
 
-from audio_player import AudioPlayer
-from game import Game
-from track import Track
+from menu import Menu
 
-if len(argv) > 1:
-    Popen(['bin/ctaff', '-i', argv[1], '-o', 'tmp/out.track']).wait()
+# Check cwd
+if not getcwd().endswith('rizumu'):
+    print('Error: rizumu must be run from the base directory (rizumu/)')
+    exit()
 
-    delay_time = 3
-    preview_length = 1.2
-    prune_unused_layers = False
+# Make required directories
+try:
+    mkdir('library/')
+    mkdir('library/tracks')
+except FileExistsError:
+    pass
 
-    audio_player = AudioPlayer(delay_time)
-    audio_player.set_device(1)
-    audio_player.open_audio(argv[1])
-
-    enabled_layers_keys = {'A': 's', 'B': 'd', 'C': 'f', 'D': 'j', 'E': 'k', 'F': 'l'}
-    # enabled_layers_keys = {'A': 's', 'B': 'd', 'C': 'f', 'D': 'j'}
-    # enabled_layers_keys = {'C': 'f', 'D': 'j', 'E': 'k', 'F': 'l'}
-    # enabled_layers_keys = {'A': 's', 'B': 'd', 'F': 'l'}
-    # enabled_layers_keys = {'C': 'f', 'D': 'j', 'E': 'k'}
-    # enabled_layers_keys = {'A': 'f', 'B': 'j'}
-
-    game = Game(audio_player, Track(argv[1]), enabled_layers_keys, preview_length, prune_unused_layers)
-    game.start_game()
+# Open menu
+menu = Menu()

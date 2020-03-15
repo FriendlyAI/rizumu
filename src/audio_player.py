@@ -5,9 +5,8 @@ from time import sleep
 from pyaudio import PyAudio
 
 
-class AudioPlayer(Thread):
+class AudioPlayer:
     def __init__(self, delay_time):
-        super().__init__()
         self.pyaudio = PyAudio()
 
         self.frame_size = 512
@@ -74,7 +73,7 @@ class AudioPlayer(Thread):
                 self.device.write(chunk, self.frame_size)
                 self.time += self.frame_time / 2
             else:
-                self.stop_stream()
+                self.stream_open.clear()
         else:
             self.device.stop_stream()
             self.unpaused.wait()
@@ -93,12 +92,15 @@ class AudioPlayer(Thread):
         self.device.stop_stream()
 
     def close(self):
-        self.stop_stream()
         self.device.close()
         self.pyaudio.terminate()
 
-    def run(self):
+    def play(self):
+        Thread(target=self.play_thread).start()
+
+    def play_thread(self):
         sleep(self.delay_time)
         while self.stream_open.is_set():
             self.play_chunk()
-        self.close()
+        self.stop_stream()
+        self.time = 0
