@@ -1,5 +1,4 @@
 from subprocess import Popen
-from time import time
 
 from mutagen.flac import FLAC
 from mutagen.mp3 import MP3
@@ -20,9 +19,10 @@ class Track:
         self.num_beats = {layer: 0 for layer in ALL_LAYERS}
         self.difficulty = None
         self.high_score = 0
+        self.high_score_accuracy = 0
+        self.high_score_layers = None
 
         self.get_tags()
-        self.generate_track_file()
 
     def get_tags(self):
         file_extension = self.audio_filepath[self.audio_filepath.rindex('.'):]
@@ -63,12 +63,13 @@ class Track:
 
     def generate_track_file(self):
         if not self.track_filepath:
-            cleaned_artist = self.artist.replace('/', '／')
-            cleaned_title = self.title.replace('/', '／')
-            cleaned_album = self.album.replace('/', '／')
-            self.track_filepath = f'library/tracks/{cleaned_artist} - {cleaned_title} - {cleaned_album} {int(time())}.track'
+            cleaned_artist = self.artist.replace('/', '／').replace('"', '')
+            cleaned_title = self.title.replace('/', '／').replace('"', '')
+            cleaned_album = self.album.replace('/', '／').replace('"', '')
+            self.track_filepath = f'library/tracks/{cleaned_artist} - {cleaned_title} - {cleaned_album}.track'
+        cleaned_audio_filepath = self.audio_filepath.replace('"', r'\"')
 
-        Popen(['bin/ctaff', '-i', self.audio_filepath, '-o', f'{self.track_filepath}']).wait()
+        Popen(['bin/ctaff', '-i', f'{str(cleaned_audio_filepath)}', '-o', f'{self.track_filepath}']).wait()
 
         with open(self.track_filepath, 'rb') as f:
             while 1:
@@ -78,7 +79,7 @@ class Track:
                 f.read(4)  # discard beat time
                 self.num_beats[beat_layer] += 1
 
-        beat_to_time_ratio = int(sum((self.num_beats[layer] for layer in self.num_beats.keys())) // self.duration)
+        beat_to_time_ratio = sum((self.num_beats[layer] for layer in self.num_beats.keys())) // self.duration
         if beat_to_time_ratio >= 5:
             self.difficulty = 5
         else:
@@ -98,6 +99,15 @@ class Track:
 
     def set_high_score(self, score):
         self.high_score = score
+
+    def set_high_score_accuracy(self, accuracy):
+        self.high_score_accuracy = accuracy
+
+    def set_high_score_layers(self, layers):
+        self.high_score_layers = layers
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.audio_filepath == other.audio_filepath
 
     def __repr__(self):
         return self.title

@@ -70,7 +70,7 @@ class AudioPlayer:
             chunk = self.data_stream.read(self.chunk_size)
             if chunk:
                 self.time += self.frame_time / 2
-                self.device.write(chunk, self.frame_size)
+                self.device.write(chunk)
                 self.time += self.frame_time / 2
             else:
                 self.stream_open.clear()
@@ -81,6 +81,7 @@ class AudioPlayer:
 
     def stop_stream(self):
         self.stream_open.clear()
+        self.device.stop_stream()
 
         if self.ffmpeg_process.poll():
             self.ffmpeg_process.kill()
@@ -88,8 +89,6 @@ class AudioPlayer:
         if self.data_stream:
             self.data_stream.flush()
             self.data_stream = None
-
-        self.device.stop_stream()
 
     def close(self):
         self.device.close()

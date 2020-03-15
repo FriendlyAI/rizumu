@@ -6,12 +6,33 @@ class Library:
         self.saved_tracks = []
 
     def add_track(self, audio_filepath):
-        # TODO: binary insert
-        self.saved_tracks.append(Track(audio_filepath))
-        self.sort_library()
+        new_track = Track(audio_filepath)
 
-    def sort_library(self):
-        self.saved_tracks.sort(key=repr)
+        start_index = 0
+        end_index = len(self.saved_tracks)
+
+        if end_index == 0:
+            self.saved_tracks.append(new_track)
+        else:
+            while 1:
+                middle_index = (start_index + end_index) // 2
+
+                if start_index == end_index:
+                    self.saved_tracks.insert(middle_index, new_track)
+                    break
+                elif new_track.title == self.saved_tracks[middle_index].title:
+                    if self.saved_tracks[middle_index] == new_track:
+                        return
+                    else:
+                        self.saved_tracks.insert(middle_index, new_track)
+                        break
+                elif new_track.title > self.saved_tracks[middle_index].title:
+                    start_index = middle_index + 1
+                elif new_track.title < self.saved_tracks[middle_index].title:
+                    end_index = middle_index
+
+        new_track.generate_track_file()
+        print(f'added {audio_filepath} to library')
 
     def get_tracks(self, center_index):
         tracks = []

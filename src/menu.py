@@ -51,10 +51,12 @@ class Menu:
         self.preview_length = 1.25
         self.prune_unused_layers = False
 
+        # Fonts
         self.generic_font = Font('font/kawashiro_gothic_unicode.ttf', 24)
         self.large_font = Font('font/kawashiro_gothic_unicode.ttf', 36)
         self.small_font = Font('font/kawashiro_gothic_unicode.ttf', 18)
 
+        # GUI variables
         self.redraw_screen = True
         self.current_screen = Menu.TITLE
         self.last_screen = Menu.TITLE
@@ -136,7 +138,7 @@ class Menu:
         self.select_track_0 = self.small_font.render(f'{self.selected_tracks[0]}', True, Menu.WHITE)
         self.select_track_1 = self.small_font.render(f'{self.selected_tracks[1]}', True, Menu.WHITE)
         self.select_track_2 = self.small_font.render(f'{self.selected_tracks[2]}', True, Menu.WHITE)
-        self.select_track_3 = self.small_font.render(f'{self.selected_tracks[3]}', True, Menu.SELECTED_COLOR)
+        self.select_track_3 = self.generic_font.render(f'{self.selected_tracks[3]}', True, Menu.SELECTED_COLOR)
         self.select_track_4 = self.small_font.render(f'{self.selected_tracks[4]}', True, Menu.WHITE)
         self.select_track_5 = self.small_font.render(f'{self.selected_tracks[5]}', True, Menu.WHITE)
         self.select_track_6 = self.small_font.render(f'{self.selected_tracks[6]}', True, Menu.WHITE)
@@ -218,10 +220,8 @@ class Menu:
 
                     if event.key == pygame.K_RETURN:
                         self.redraw_screen = True
-                        game = Game(self.clock, self.audio_player, self.selected_tracks[3], self.enabled_layers_keys, 1.25, False)
-                        game.start_game()
-                        print(f'Final score: {game.score}')
-                        pass
+                        self.play_track(self.selected_tracks[3])
+
                     elif event.key == pygame.K_BACKSPACE:
                         self.redraw_screen = True
                         self.current_screen = Menu.TITLE
@@ -266,8 +266,17 @@ class Menu:
 
         self.close_menu()
 
+    def play_track(self, track):
+        game = Game(self.clock, self.audio_player, track, self.enabled_layers_keys, 1.25, False)
+        game.start_game()
+        print(f'Final score: {game.score}\nPrevious high score: {track.high_score}')
+        print(f'Accuracy: {game.calculate_accuracy()}\nPrevious high score accuracy: {track.high_score_accuracy}')
+        if game.score > track.high_score:
+            track.set_high_score(game.score)
+            track.set_high_score_accuracy(game.calculate_accuracy())
+            track.set_high_score_layers(str(sorted(game.enabled_layers)))
+
     def save_library(self):
-        self.library.sort_library()
         dump(self.library, open('library/saved.library', 'wb'))
 
     def close_menu(self):

@@ -142,6 +142,10 @@ class Game:
             self.combo += 1
             return 'ok!', self.ok_color
 
+    def calculate_accuracy(self):
+        num_hit = self.num_perfect + self.num_great + self.num_ok
+        return num_hit / max(1, self.num_missed + num_hit) * 100
+
     def draw_playing_screen(self):
         if not self.audio_player.stream_open.is_set():
             self.playing_screen = False
@@ -212,8 +216,7 @@ class Game:
             self.score_text = self.small_font.render(f'{self.score} x {self.combo_multiplier:.1f}', True, (255, 255, 255))
             self.screen.blit(self.score_text, (20, self.height - 70))
 
-            num_hit = self.num_perfect + self.num_great + self.num_ok
-            self.accuracy_text = self.small_font.render(f'{(num_hit / max(1, self.num_missed + num_hit) * 100):.2f}%', True, (255, 255, 255))
+            self.accuracy_text = self.small_font.render(f'{self.calculate_accuracy():.2f}%', True, (255, 255, 255))
             self.screen.blit(self.accuracy_text, (200, self.height - 70))
 
             # Draw track and beats
@@ -358,8 +361,7 @@ class Game:
             self.final_score_missed_text_box.center = self.width / 2, self.height / 2 - 100
             self.screen.blit(self.final_score_missed_text, self.final_score_missed_text_box)
 
-            num_hit = self.num_perfect + self.num_great + self.num_ok
-            self.final_score_accuracy_text = self.large_font.render(f'accuracy: {(num_hit / max(1, self.num_missed + num_hit) * 100):.2f}%', True, (255, 255, 255))
+            self.final_score_accuracy_text = self.large_font.render(f'accuracy: {self.calculate_accuracy():.2f}%', True, (255, 255, 255))
             self.final_score_accuracy_text_box = self.final_score_accuracy_text.get_rect()
             self.final_score_accuracy_text_box.center = self.width / 2, self.height / 2 + 20
             self.screen.blit(self.final_score_accuracy_text, self.final_score_accuracy_text_box)
