@@ -13,7 +13,7 @@ class Game:
         self.audio_player = audio_player
         self.track = track
         self.layers = {}
-        self.enabled_layers = enabled_layers_keys.keys()
+        self.enabled_layers = set(enabled_layers_keys.keys())
         self.prune_unused_layers = prune_unused_layers
         for layer in ALL_LAYERS:
             self.layers[layer] = Layer(layer, enabled_layers_keys.get(layer, None))
@@ -83,6 +83,9 @@ class Game:
         self.playing_screen = True
         self.score_screen = False
 
+        self.restart = False
+        self.finished = False
+
         # Final score screen
 
         self.final_score_text = None
@@ -119,11 +122,10 @@ class Game:
             layer_object.count_beats()
             if self.prune_unused_layers and (layer_object.num_beats == 0 or layer not in self.enabled_layers):
                 del self.layers[layer]
-            else:
-                print(f'{layer}: {layer_object.num_beats} beats')
+                if layer in self.enabled_layers:
+                    self.enabled_layers.remove(layer)
 
-        self.total_num_beats = sum([self.layers[layer].num_beats for layer in self.enabled_layers])
-        print(f'Total: {self.total_num_beats}')
+        self.total_num_beats = sum((self.track.num_beats[layer] for layer in self.enabled_layers))
 
     def score_beat(self, time_difference):
         if time_difference < self.lenience * .5:
@@ -148,6 +150,7 @@ class Game:
 
     def draw_playing_screen(self):
         if not self.audio_player.stream_open.is_set():
+            self.finished = True
             self.playing_screen = False
             self.score_screen = True
             return
@@ -294,8 +297,7 @@ class Game:
                             break
 
                 elif event.type == pygame.QUIT:
-                    self.audio_player.stream_open.clear()
-                    self.playing_screen = False
+                    self.close_game()
                     self.score_screen = True
                     return
 
@@ -324,16 +326,21 @@ class Game:
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    self.audio_player.unpaused.set()
-                    self.audio_player.stream_open.clear()
-                    self.playing_screen = False
-                    self.score_screen = True
+                    self.close_game()
                     return
 
-                elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    self.paused = False
-                    self.audio_player.unpause()
-                    self.start_time += time() - self.pause_time
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.paused = False
+                        self.audio_player.unpause()
+                        self.start_time += time() - self.pause_time
+                    elif event.key == pygame.K_r:
+                        self.close_game()
+                        self.restart = True
+                        return
+                    elif event.key == pygame.K_BACKSPACE:
+                        self.close_game()
+                        return
 
         self.clock.tick(60)
 
@@ -376,7 +383,7 @@ class Game:
             pygame.display.set_caption(f'Score: {self.score}')
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
                 self.score_screen = False
                 return
 
@@ -400,4 +407,6 @@ class Game:
         self.display_loop()
 
     def close_game(self):
-        pass
+        self.audio_player.unpause()
+        self.audio_player.stream_open.clear()
+        self.playing_screen = False

@@ -21,6 +21,7 @@ class Menu:
     SEARCH = 7
 
     WHITE = (255, 255, 255)
+    GRAY = (128, 128, 128)
     A_COLOR = (255, 128, 128)
     B_COLOR = (255, 255, 128)
     C_COLOR = (128, 255, 128)
@@ -29,13 +30,15 @@ class Menu:
     F_COLOR = (255, 128, 255)
     SELECTED_COLOR = D_COLOR
 
+    DIFFICULTY_COLORS = [C_COLOR, B_COLOR, A_COLOR, E_COLOR, F_COLOR]
+
     def __init__(self):
         pygame.init()
 
         self.clock = Clock()
 
-        size = self.width, self.height = 500, 800
-        self.screen = pygame.display.set_mode(size)
+        self.size = self.width, self.height = 500, 800
+        self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED)
         # pygame.display.set_icon(pygame.image.load('img/icon.png'))
 
         if isfile('library/saved.library'):
@@ -43,13 +46,17 @@ class Menu:
         else:
             self.library = Library()
 
-        self.audio_player = AudioPlayer(3)
-        self.audio_player.set_device(1)
+        self.delay_time = 2
+        self.audio_device = 1
+
+        self.audio_player = AudioPlayer(self.delay_time)
+        self.audio_player.set_device(self.audio_device)
 
         # In-game options
         self.enabled_layers_keys = {'A': 's', 'B': 'd', 'C': 'f', 'D': 'j', 'E': 'k', 'F': 'l'}
+        # self.enabled_layers_keys = {'A': 'f', 'B': 'j'}
         self.preview_length = 1.25
-        self.prune_unused_layers = False
+        self.prune_unused_layers = True
 
         # Fonts
         self.generic_font = Font('font/kawashiro_gothic_unicode.ttf', 24)
@@ -100,6 +107,8 @@ class Menu:
         self.select_track_artist = None
         self.select_track_album = None
         self.select_track_high_score = None
+        self.select_track_high_score_accuracy = None
+        self.select_track_high_score_layers = None
         self.select_track_difficulty = None
         self.select_track_num_beats_A = None
         self.select_track_num_beats_B = None
@@ -138,17 +147,19 @@ class Menu:
         self.select_track_0 = self.small_font.render(f'{self.selected_tracks[0]}', True, Menu.WHITE)
         self.select_track_1 = self.small_font.render(f'{self.selected_tracks[1]}', True, Menu.WHITE)
         self.select_track_2 = self.small_font.render(f'{self.selected_tracks[2]}', True, Menu.WHITE)
-        self.select_track_3 = self.generic_font.render(f'{self.selected_tracks[3]}', True, Menu.SELECTED_COLOR)
+        self.select_track_3 = self.small_font.render(f'{self.selected_tracks[3]}', True, Menu.SELECTED_COLOR)
         self.select_track_4 = self.small_font.render(f'{self.selected_tracks[4]}', True, Menu.WHITE)
         self.select_track_5 = self.small_font.render(f'{self.selected_tracks[5]}', True, Menu.WHITE)
         self.select_track_6 = self.small_font.render(f'{self.selected_tracks[6]}', True, Menu.WHITE)
 
     def render_selected_track_data(self):
-        self.select_track_title = self.generic_font.render(f'{self.selected_tracks[3].title}', True, Menu.WHITE)
-        self.select_track_artist = self.generic_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
-        self.select_track_album = self.generic_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
-        self.select_track_high_score = self.generic_font.render(f'{self.selected_tracks[3].high_score}', True, Menu.WHITE)
-        self.select_track_difficulty = self.generic_font.render(f'{self.selected_tracks[3].difficulty}', True, Menu.WHITE)
+        self.select_track_title = self.small_font.render(f'{self.selected_tracks[3].title}', True, Menu.D_COLOR)
+        self.select_track_artist = self.small_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
+        self.select_track_album = self.small_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
+        self.select_track_high_score = self.small_font.render(f'High Score: {self.selected_tracks[3].high_score}', True, Menu.WHITE)
+        self.select_track_high_score_accuracy = self.small_font.render(f'{self.selected_tracks[3].high_score_accuracy:.2f}%', True, Menu.WHITE)
+        self.select_track_high_score_layers = self.small_font.render(f'{self.selected_tracks[3].high_score_layers}', True, Menu.WHITE)
+        self.select_track_difficulty = self.small_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, Menu.DIFFICULTY_COLORS[self.selected_tracks[3].difficulty - 1])
 
         self.select_track_num_beats_A = self.small_font.render(f'{self.selected_tracks[3].num_beats["A"]}', True, Menu.A_COLOR)
         self.select_track_num_beats_B = self.small_font.render(f'{self.selected_tracks[3].num_beats["D"]}', True, Menu.B_COLOR)
@@ -208,12 +219,14 @@ class Menu:
                     self.track_selection_index = max(self.track_selection_index - 1, 0)
                     self.selected_tracks = self.library.get_tracks(self.track_selection_index)
                     self.render_selected_tracks()
+                    self.render_selected_track_data()
                     self.redraw_screen = True
                 elif event.key == pygame.K_DOWN:
                     pygame.key.set_repeat(250, 50)
                     self.track_selection_index = min(self.track_selection_index + 1, len(self.library.saved_tracks) - 1)
                     self.selected_tracks = self.library.get_tracks(self.track_selection_index)
                     self.render_selected_tracks()
+                    self.render_selected_track_data()
                     self.redraw_screen = True
                 else:
                     pygame.key.set_repeat()
@@ -221,6 +234,7 @@ class Menu:
                     if event.key == pygame.K_RETURN:
                         self.redraw_screen = True
                         self.play_track(self.selected_tracks[3])
+                        pygame.display.set_mode(self.size)  # reset size
 
                     elif event.key == pygame.K_BACKSPACE:
                         self.redraw_screen = True
@@ -237,6 +251,9 @@ class Menu:
             self.redraw_screen = False
             self.screen.fill((0, 0, 0))
 
+            pygame.draw.rect(self.screen, Menu.GRAY, (15, 220, self.width - 30, 60), 1)
+            pygame.draw.line(self.screen, Menu.GRAY, (0, 500), (self.width, 500))
+
             self.screen.blit(self.select_track_0, (15, 30))
             self.screen.blit(self.select_track_1, (30, 100))
             self.screen.blit(self.select_track_2, (45, 170))
@@ -249,6 +266,21 @@ class Menu:
             self.screen.blit(self.select_new, (100, self.height - 30))
             self.screen.blit(self.select_back, (325, self.height - 30))
             self.screen.blit(self.select_play, (425, self.height - 30))
+
+            self.screen.blit(self.select_track_title, (15, 525))
+            self.screen.blit(self.select_track_artist, (15, 565))
+            self.screen.blit(self.select_track_album, (15, 605))
+            self.screen.blit(self.select_track_high_score, (15, 645))
+            self.screen.blit(self.select_track_high_score_accuracy, (215, 645))
+            self.screen.blit(self.select_track_high_score_layers, (315, 645))
+            self.screen.blit(self.select_track_difficulty, (15, 675))
+
+            self.screen.blit(self.select_track_num_beats_A, (15, 705))
+            self.screen.blit(self.select_track_num_beats_B, (65, 705))
+            self.screen.blit(self.select_track_num_beats_C, (115, 705))
+            self.screen.blit(self.select_track_num_beats_D, (165, 705))
+            self.screen.blit(self.select_track_num_beats_E, (215, 705))
+            self.screen.blit(self.select_track_num_beats_F, (265, 705))
 
             pygame.display.flip()
             pygame.display.set_caption('Track Select')
@@ -267,14 +299,17 @@ class Menu:
         self.close_menu()
 
     def play_track(self, track):
-        game = Game(self.clock, self.audio_player, track, self.enabled_layers_keys, 1.25, False)
+        game = Game(self.clock, self.audio_player, track, self.enabled_layers_keys, self.preview_length, self.prune_unused_layers)
         game.start_game()
-        print(f'Final score: {game.score}\nPrevious high score: {track.high_score}')
-        print(f'Accuracy: {game.calculate_accuracy()}\nPrevious high score accuracy: {track.high_score_accuracy}')
-        if game.score > track.high_score:
-            track.set_high_score(game.score)
-            track.set_high_score_accuracy(game.calculate_accuracy())
-            track.set_high_score_layers(str(sorted(game.enabled_layers)))
+        while game.restart:
+            self.audio_player.idle.wait()
+            game = Game(self.clock, self.audio_player, track, self.enabled_layers_keys, self.preview_length, self.prune_unused_layers)
+            game.start_game()
+        if game.finished:
+            if game.score > track.high_score:
+                track.set_high_score(game.score)
+                track.set_high_score_accuracy(game.calculate_accuracy())
+                track.set_high_score_layers(''.join((sorted(self.enabled_layers_keys.keys()))))
 
     def save_library(self):
         dump(self.library, open('library/saved.library', 'wb'))

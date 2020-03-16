@@ -80,10 +80,10 @@ class Track:
                 self.num_beats[beat_layer] += 1
 
         beat_to_time_ratio = sum((self.num_beats[layer] for layer in self.num_beats.keys())) // self.duration
-        if beat_to_time_ratio >= 5:
+        if beat_to_time_ratio >= 6:
             self.difficulty = 5
         else:
-            self.difficulty = beat_to_time_ratio
+            self.difficulty = max(beat_to_time_ratio - 1, 1)
 
     def set_track_filepath(self, track_filepath):
         self.track_filepath = track_filepath

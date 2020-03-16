@@ -23,6 +23,8 @@ class AudioPlayer:
         self.stream_open = Event()
         self.unpaused = Event()
         self.unpaused.set()
+        self.idle = Event()
+        self.idle.set()
 
         self.time = 0
         self.delay_time = delay_time
@@ -95,6 +97,7 @@ class AudioPlayer:
         self.pyaudio.terminate()
 
     def play(self):
+        self.idle.clear()
         Thread(target=self.play_thread).start()
 
     def play_thread(self):
@@ -103,3 +106,4 @@ class AudioPlayer:
             self.play_chunk()
         self.stop_stream()
         self.time = 0
+        self.idle.set()
