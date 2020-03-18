@@ -14,25 +14,27 @@ class Library:
 
         if end_index == 0:
             self.saved_tracks.append(new_track)
+            new_track.generate_track_file()
+            return 0
         else:
             while 1:
                 middle_index = (start_index + end_index) // 2
 
                 if start_index == end_index:
                     self.saved_tracks.insert(middle_index, new_track)
-                    break
+                    new_track.generate_track_file()
+                    return middle_index
                 elif sort_title == self.saved_tracks[middle_index].title.lower():
                     if self.saved_tracks[middle_index] == new_track:
                         return
                     else:
                         self.saved_tracks.insert(middle_index, new_track)
-                        break
+                        new_track.generate_track_file()
+                        return middle_index
                 elif sort_title > self.saved_tracks[middle_index].title.lower():
                     start_index = middle_index + 1
                 elif sort_title < self.saved_tracks[middle_index].title.lower():
                     end_index = middle_index
-
-        new_track.generate_track_file()
 
     def get_tracks(self, center_index):
         tracks = []

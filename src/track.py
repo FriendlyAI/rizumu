@@ -66,7 +66,7 @@ class Track:
             cleaned_artist = self.artist.replace('/', '／').replace('"', '')
             cleaned_title = self.title.replace('/', '／').replace('"', '')
             cleaned_album = self.album.replace('/', '／').replace('"', '')
-            self.track_filepath = f'library/tracks/{cleaned_artist} - {cleaned_title} - {cleaned_album}.track'
+            self.track_filepath = f'library/tracks/{cleaned_artist} - {cleaned_title} - {cleaned_album}.map'
         cleaned_audio_filepath = self.audio_filepath.replace('"', r'\"')
 
         Popen(['bin/ctaff', '-i', f'{str(cleaned_audio_filepath)}', '-o', f'{self.track_filepath}']).wait()
@@ -79,11 +79,7 @@ class Track:
                 f.read(4)  # discard beat time
                 self.num_beats[beat_layer] += 1
 
-        beat_to_time_ratio = sum((self.num_beats[layer] for layer in self.num_beats.keys())) // self.duration
-        if beat_to_time_ratio >= 6:
-            self.difficulty = 5
-        else:
-            self.difficulty = max(beat_to_time_ratio - 1, 1)
+        self.difficulty = round(sum((self.num_beats[layer] for layer in ALL_LAYERS)) / self.duration, 1)
 
     def set_track_filepath(self, track_filepath):
         self.track_filepath = track_filepath

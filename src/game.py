@@ -9,10 +9,11 @@ from util import ALL_LAYERS, seconds_to_readable_time
 
 
 class Game:
-    def __init__(self, clock, audio_player, track, enabled_layers_keys, preview_length, prune_unused_layers):
+    def __init__(self, screen, width, height, clock, audio_player, track, enabled_layers_keys, preview_length, prune_unused_layers, latency):
         self.audio_player = audio_player
         self.track = track
         self.layers = {}
+        self.enabled_layers_keys = enabled_layers_keys
         self.enabled_layers = set(enabled_layers_keys.keys())
         self.prune_unused_layers = prune_unused_layers
         for layer in ALL_LAYERS:
@@ -23,17 +24,16 @@ class Game:
 
         self.num_layers = max(len(self.layers.keys()), 1)
 
-        self.track_height = 600
-        self.bottom_offset = 200
+        self.width = width
+        self.height = height
+        self.track_height = int(self.height * .75)
+        self.bottom_offset = self.height - self.track_height
         self.preview_length = preview_length  # seconds
-
-        size = self.width, self.height = 500, self.track_height + self.bottom_offset
 
         self.pixels_per_second = self.track_height / self.preview_length  # 400 pixels = 1 sec
         self.lenience = 0.07  # seconds +/- per beat
 
-        # pygame.display.set_icon(pygame.image.load('img/icon.png'))
-        self.screen = pygame.display.set_mode(size)
+        self.screen = screen
         self.generic_font = Font('font/good_times_ascii.ttf', 24)
         self.large_font = Font('font/good_times_ascii.ttf', 36)
         self.small_font = Font('font/good_times_ascii.ttf', 18)
@@ -50,7 +50,7 @@ class Game:
 
         self.clock = clock
 
-        self.latency = audio_player.device.get_output_latency() * 0
+        self.latency = latency
         self.average_time_difference = 0
 
         self.score = 0
@@ -84,7 +84,6 @@ class Game:
         self.score_screen = False
 
         self.restart = False
-        self.finished = False
 
         # Final score screen
 
@@ -150,7 +149,6 @@ class Game:
 
     def draw_playing_screen(self):
         if not self.audio_player.stream_open.is_set():
-            self.finished = True
             self.playing_screen = False
             self.score_screen = True
             return
@@ -321,7 +319,7 @@ class Game:
             pygame.display.flip()
 
             # Update title with FPS and time
-            pygame.display.set_caption(f'{self.clock.get_fps():.1f} | {seconds_to_readable_time(current_song_time)}')
+            pygame.display.set_caption(f'{self.track.title} | {self.clock.get_fps():.1f} | {seconds_to_readable_time(current_song_time)}')
 
         else:
             for event in pygame.event.get():
@@ -384,6 +382,10 @@ class Game:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                if self.score > self.track.high_score:
+                    self.track.set_high_score(self.score)
+                    self.track.set_high_score_accuracy(self.calculate_accuracy())
+                    self.track.set_high_score_layers(''.join((sorted(self.enabled_layers_keys.keys()))))
                 self.score_screen = False
                 return
 
@@ -402,7 +404,7 @@ class Game:
 
     def start_game(self):
         self.audio_player.open_audio(self.track.audio_filepath)
-        self.start_time = time() + self.audio_player.delay_time - self.audio_player.get_fast_forward_time()  # 3 second pre-delay
+        self.start_time = time() + self.audio_player.delay_time - self.audio_player.get_fast_forward_time()
         self.audio_player.play()
         self.display_loop()
 
