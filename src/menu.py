@@ -38,19 +38,24 @@ class Menu:
 
         self.clock = Clock()
 
-        self.size = self.width, self.height = 500, 800
-        self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED)
+        info = pygame.display.Info()
+
+        self.size = self.width, self.height = int(info.current_w * .75), info.current_h
+        self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED | pygame.RESIZABLE | pygame.FULLSCREEN)
         # pygame.display.set_icon(pygame.image.load('img/icon.png'))
 
         if isfile('library/saved.library'):
             self.library = load(open('library/saved.library', 'rb'))
         else:
             self.library = Library()
+
         self.delay_time = 2
         self.audio_device = 1
 
         self.audio_player = AudioPlayer(self.delay_time)
         self.audio_player.set_device(self.audio_device)
+
+        pygame.mouse.set_visible(False)
 
         # In-game options
         self.enabled_layers_keys = {'A': 's', 'B': 'd', 'C': 'f', 'D': 'j', 'E': 'k', 'F': 'l'}
@@ -65,8 +70,6 @@ class Menu:
         # Fonts
         self.generic_font = Font('font/kawashiro_gothic_unicode.ttf', 24)
         self.large_font = Font('font/kawashiro_gothic_unicode.ttf', 36)
-        self.small_font = Font('font/kawashiro_gothic_unicode.ttf', 18)
-        self.tiny_font = Font('font/kawashiro_gothic_unicode.ttf', 14)
 
         # GUI variables
         self.redraw_screen = True
@@ -125,10 +128,10 @@ class Menu:
 
         self.render_selected_track_data()
 
-        self.select_edit = self.small_font.render('e: Edit', True, Menu.WHITE)
-        self.select_new = self.small_font.render('n: New', True, Menu.WHITE)
-        self.select_back = self.small_font.render('⇤ : Back', True, Menu.WHITE)
-        self.select_play = self.small_font.render('↵ : Play', True, Menu.WHITE)
+        self.select_edit = self.generic_font.render('e: Edit', True, Menu.WHITE)
+        self.select_new = self.generic_font.render('n: New', True, Menu.WHITE)
+        self.select_back = self.generic_font.render('⇤ : Back', True, Menu.WHITE)
+        self.select_play = self.generic_font.render('↵ : Play', True, Menu.WHITE)
 
         '''
         Track setup screen objects
@@ -150,31 +153,31 @@ class Menu:
         self.display_loop()
 
     def render_selected_tracks(self):
-        self.select_track_0 = self.small_font.render(f'{self.selected_tracks[0]}', True, Menu.WHITE)
-        self.select_track_1 = self.small_font.render(f'{self.selected_tracks[1]}', True, Menu.WHITE)
-        self.select_track_2 = self.small_font.render(f'{self.selected_tracks[2]}', True, Menu.WHITE)
-        self.select_track_3 = self.small_font.render(f'{self.selected_tracks[3]}', True, Menu.SELECTED_COLOR)
-        self.select_track_4 = self.small_font.render(f'{self.selected_tracks[4]}', True, Menu.WHITE)
-        self.select_track_5 = self.small_font.render(f'{self.selected_tracks[5]}', True, Menu.WHITE)
-        self.select_track_6 = self.small_font.render(f'{self.selected_tracks[6]}', True, Menu.WHITE)
+        self.select_track_0 = self.generic_font.render(f'{self.selected_tracks[0]}', True, Menu.WHITE)
+        self.select_track_1 = self.generic_font.render(f'{self.selected_tracks[1]}', True, Menu.WHITE)
+        self.select_track_2 = self.generic_font.render(f'{self.selected_tracks[2]}', True, Menu.WHITE)
+        self.select_track_3 = self.generic_font.render(f'{self.selected_tracks[3]}', True, Menu.SELECTED_COLOR)
+        self.select_track_4 = self.generic_font.render(f'{self.selected_tracks[4]}', True, Menu.WHITE)
+        self.select_track_5 = self.generic_font.render(f'{self.selected_tracks[5]}', True, Menu.WHITE)
+        self.select_track_6 = self.generic_font.render(f'{self.selected_tracks[6]}', True, Menu.WHITE)
 
     def render_selected_track_data(self):
         if self.selected_tracks[3]:
-            self.select_track_title = self.small_font.render(f'{self.selected_tracks[3].title}', True, Menu.D_COLOR)
-            self.select_track_artist = self.tiny_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
-            self.select_track_album = self.tiny_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
-            self.select_track_high_score = self.small_font.render(f'High Score: {self.selected_tracks[3].high_score}', True, Menu.WHITE)
-            self.select_track_high_score_accuracy = self.small_font.render(f'{self.selected_tracks[3].high_score_accuracy:.2f}%', True, Menu.WHITE)
-            self.select_track_high_score_layers = self.small_font.render(f'{self.selected_tracks[3].high_score_layers}', True, Menu.WHITE)
-            self.select_track_duration = self.small_font.render(f'{seconds_to_readable_time(self.selected_tracks[3].duration)}', True, Menu.WHITE)
-            self.select_track_difficulty = self.small_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, Menu.DIFFICULTY_COLORS[min(7, int(self.selected_tracks[3].difficulty))])
+            self.select_track_title = self.large_font.render(f'{self.selected_tracks[3].title}', True, Menu.D_COLOR)
+            self.select_track_artist = self.generic_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
+            self.select_track_album = self.generic_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
+            self.select_track_high_score = self.generic_font.render(f'High Score: {self.selected_tracks[3].high_score}', True, Menu.WHITE)
+            self.select_track_high_score_accuracy = self.generic_font.render(f'{self.selected_tracks[3].high_score_accuracy:.2f}%', True, Menu.WHITE)
+            self.select_track_high_score_layers = self.generic_font.render(f'{self.selected_tracks[3].high_score_layers}', True, Menu.WHITE)
+            self.select_track_duration = self.generic_font.render(f'{seconds_to_readable_time(self.selected_tracks[3].duration)}', True, Menu.WHITE)
+            self.select_track_difficulty = self.generic_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, Menu.DIFFICULTY_COLORS[min(7, int(self.selected_tracks[3].difficulty))])
 
-            self.select_track_num_beats_A = self.small_font.render(f'{self.selected_tracks[3].num_beats["A"]}', True, Menu.A_COLOR)
-            self.select_track_num_beats_B = self.small_font.render(f'{self.selected_tracks[3].num_beats["B"]}', True, Menu.B_COLOR)
-            self.select_track_num_beats_C = self.small_font.render(f'{self.selected_tracks[3].num_beats["C"]}', True, Menu.C_COLOR)
-            self.select_track_num_beats_D = self.small_font.render(f'{self.selected_tracks[3].num_beats["D"]}', True, Menu.D_COLOR)
-            self.select_track_num_beats_E = self.small_font.render(f'{self.selected_tracks[3].num_beats["E"]}', True, Menu.E_COLOR)
-            self.select_track_num_beats_F = self.small_font.render(f'{self.selected_tracks[3].num_beats["F"]}', True, Menu.F_COLOR)
+            self.select_track_num_beats_A = self.generic_font.render(f'{self.selected_tracks[3].num_beats["A"]}', True, Menu.A_COLOR)
+            self.select_track_num_beats_B = self.generic_font.render(f'{self.selected_tracks[3].num_beats["B"]}', True, Menu.B_COLOR)
+            self.select_track_num_beats_C = self.generic_font.render(f'{self.selected_tracks[3].num_beats["C"]}', True, Menu.C_COLOR)
+            self.select_track_num_beats_D = self.generic_font.render(f'{self.selected_tracks[3].num_beats["D"]}', True, Menu.D_COLOR)
+            self.select_track_num_beats_E = self.generic_font.render(f'{self.selected_tracks[3].num_beats["E"]}', True, Menu.E_COLOR)
+            self.select_track_num_beats_F = self.generic_font.render(f'{self.selected_tracks[3].num_beats["F"]}', True, Menu.F_COLOR)
 
     def draw_menu(self):
         for event in pygame.event.get():
@@ -202,6 +205,9 @@ class Menu:
                         self.redraw_screen = True
                     self.label_selection_index = 0
                     return
+                elif event.key == pygame.K_BACKSPACE:
+                    self.current_screen = 0
+                    return
 
         if self.redraw_screen:
             self.redraw_screen = False
@@ -212,9 +218,8 @@ class Menu:
             self.screen.blit(self.main_settings, self.main_settings_box)
 
             pygame.display.flip()
-            pygame.display.set_caption('rizumu')
 
-        self.clock.tick(60)
+        self.clock.tick(30)
 
     # noinspection PyArgumentList
     def draw_track_select(self):
@@ -270,28 +275,27 @@ class Menu:
 
             self.screen.blit(self.select_edit, (15, self.height - 30))
             self.screen.blit(self.select_new, (100, self.height - 30))
-            self.screen.blit(self.select_back, (325, self.height - 30))
-            self.screen.blit(self.select_play, (425, self.height - 30))
+            self.screen.blit(self.select_back, (self.width - 175, self.height - 30))
+            self.screen.blit(self.select_play, (self.width - 75, self.height - 30))
 
             if self.selected_tracks[3]:
                 self.screen.blit(self.select_track_title, (15, 525))
-                self.screen.blit(self.select_track_artist, (15, 565))
-                self.screen.blit(self.select_track_album, (15, 605))
-                self.screen.blit(self.select_track_high_score, (15, 645))
-                self.screen.blit(self.select_track_high_score_accuracy, (215, 645))
-                self.screen.blit(self.select_track_high_score_layers, (340, 645))
-                self.screen.blit(self.select_track_difficulty, (15, 675))
+                self.screen.blit(self.select_track_artist, (15, 600))
+                self.screen.blit(self.select_track_album, (15, 650))
+                self.screen.blit(self.select_track_high_score, (15, 700))
+                self.screen.blit(self.select_track_high_score_accuracy, (self.width * .25, 700))
+                self.screen.blit(self.select_track_high_score_layers, (self.width * .4, 700))
+                self.screen.blit(self.select_track_difficulty, (15, 750))
 
-                self.screen.blit(self.select_track_num_beats_A, (15, 705))
-                self.screen.blit(self.select_track_num_beats_B, (65, 705))
-                self.screen.blit(self.select_track_num_beats_C, (115, 705))
-                self.screen.blit(self.select_track_num_beats_D, (165, 705))
-                self.screen.blit(self.select_track_num_beats_E, (215, 705))
-                self.screen.blit(self.select_track_num_beats_F, (265, 705))
-                self.screen.blit(self.select_track_duration, (340, 705))
+                self.screen.blit(self.select_track_num_beats_A, (15, 800))
+                self.screen.blit(self.select_track_num_beats_B, (90, 800))
+                self.screen.blit(self.select_track_num_beats_C, (165, 800))
+                self.screen.blit(self.select_track_num_beats_D, (240, 800))
+                self.screen.blit(self.select_track_num_beats_E, (315, 800))
+                self.screen.blit(self.select_track_num_beats_F, (390, 800))
+                self.screen.blit(self.select_track_duration, (500, 800))
 
             pygame.display.flip()
-            pygame.display.set_caption('Track Select')
 
         self.clock.tick(60)
 
