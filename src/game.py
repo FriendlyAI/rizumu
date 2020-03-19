@@ -30,23 +30,23 @@ class Game:
         self.bottom_offset = self.height - self.track_height
         self.preview_length = preview_length  # seconds
 
-        self.pixels_per_second = self.track_height / self.preview_length  # 400 pixels = 1 sec
-        self.lenience = 0.07  # seconds +/- per beat
+        self.pixels_per_second = self.track_height / self.preview_length
+        self.lenience = 0.075  # seconds +/- per beat
 
         self.screen = screen
         self.generic_font = Font('font/good_times_ascii.ttf', 24)
         self.large_font = Font('font/good_times_ascii.ttf', 36)
         self.small_font = Font('font/good_times_ascii.ttf', 18)
 
-        self.beat_width = self.track_height / 3 / self.num_layers
-        self.beat_height = self.pixels_per_second / 25
+        self.beat_width = self.track_height / self.num_layers / 3
+        self.beat_height = self.pixels_per_second / 30
 
         self.layer_separation = (self.width - self.num_layers * self.beat_width) / (self.num_layers + 1)
         self.layer_centers = [self.layer_separation * (i + 1) + (self.beat_width * (2 * i + 1) / 2)
                               for i in range(0, self.num_layers)]
 
         for layer, center in zip(sorted(self.layers.keys()), self.layer_centers):
-            self.layers[layer].generate_layer_label(self.generic_font, center, self.track_height)
+            self.layers[layer].generate_layer_label(self.small_font, center, self.track_height)
 
         self.clock = clock
 
@@ -127,12 +127,12 @@ class Game:
         self.total_num_beats = sum((self.track.num_beats[layer] for layer in self.enabled_layers))
 
     def score_beat(self, time_difference):
-        if time_difference < self.lenience * .5:
+        if time_difference < self.lenience / 3:
             self.score += int(30 * self.combo_multiplier)
             self.num_perfect += 1
             self.combo += 3
             return 'perfect!', self.perfect_color
-        elif time_difference <= self.lenience * .8:
+        elif time_difference < self.lenience * 2 / 3:
             self.score += int(20 * self.combo_multiplier)
             self.num_great += 1
             self.combo += 2
@@ -174,7 +174,7 @@ class Game:
                              (self.width, 2 * self.track_height / 3), 1)
 
             # Draw baseline
-            pygame.draw.line(self.screen, (255, 255, 255), (0, self.track_height), (self.width, self.track_height), 9)
+            pygame.draw.line(self.screen, (128, 128, 128), (0, self.track_height), (self.width, self.track_height), 5)
 
             # Draw combo progress bar
             if self.combo >= 75:
@@ -190,7 +190,10 @@ class Game:
                 combo_color = (255, 255, 255)
                 self.combo_multiplier = 1.0
 
-            pygame.draw.line(self.screen, combo_color, (0, self.track_height + 7), (self.width * min(75, self.combo) / 75, self.track_height + 7), 5)
+            pygame.draw.line(self.screen, (255, 255, 255), (0, self.track_height), (self.width * min(75, self.combo) / 75, self.track_height), 5)
+            if self.combo < 75:
+                pygame.draw.line(self.screen, (0, 0, 0), (self.width / 3, self.track_height - 2), (self.width / 3, self.track_height + 2), 7)
+                pygame.draw.line(self.screen, (0, 0, 0), (self.width * 2 / 3, self.track_height - 2), (self.width * 2 / 3, self.track_height + 2), 7)
 
             # Draw layer key labels
             for layer in self.enabled_layers:
@@ -199,7 +202,7 @@ class Game:
                     self.screen.blit(layer_object.key_label_text, layer_object.key_label_text_box)
 
             # Draw progress bar
-            pygame.draw.line(self.screen, (255, 255, 255), (0, self.height - 3), (self.width * max(0, int(current_song_time)) / self.track.duration, self.height - 3), 5)
+            pygame.draw.line(self.screen, (255, 255, 255), (0, self.height - 3), (self.width * (current_song_time if current_song_time > 0 else 0) / self.track.duration, self.height - 3), 5)
 
             # Draw realtime score labels
             self.num_perfect_text = self.small_font.render(f'{self.num_perfect}', True, self.perfect_color)
@@ -232,9 +235,9 @@ class Game:
                 for i in range(layer_object.count_remaining_beats() - 1, -1, -1):
                     beat = layer_object.get_beat(i)
                     if current_song_time - self.lenience - .1 <= beat.time:
-                        if abs(current_song_time - beat.time) <= self.lenience:
-                            beat.set_color(self.great_color)
-                        elif current_song_time - beat.time > self.lenience:  # missed, convert to shadow
+                        # if abs(current_song_time - beat.time) <= self.lenience:
+                        #     beat.set_color(self.great_color)
+                        if current_song_time - beat.time > self.lenience:  # missed, convert to shadow
                             beat.set_color(self.missed_color)
                             layer_object.insert_shadow(beat)
                             layer_object.remove_last_beat()
@@ -275,7 +278,7 @@ class Game:
                         for layer in self.enabled_layers:
                             layer_object = self.layers[layer]
                             if event.key == ord(layer_object.key):
-                                layer_object.set_line_thickness(7)
+                                layer_object.set_line_thickness(5)
                                 if layer_object.count_remaining_beats() > 0:
                                     time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
                                     if time_difference <= self.lenience:
@@ -291,7 +294,7 @@ class Game:
                     for layer in self.enabled_layers:
                         layer_object = self.layers[layer]
                         if event.key == ord(layer_object.key):
-                            layer_object.set_line_thickness(5)
+                            layer_object.set_line_thickness(3)
                             break
 
                 elif event.type == pygame.QUIT:
@@ -308,7 +311,7 @@ class Game:
 
             # Draw hit text
             if self.hit_text:
-                self.hit_text_box.center = self.width / 2, self.height - 100 - self.hit_text_frames / 2
+                self.hit_text_box.center = self.width / 2, self.height - 100 - self.hit_text_frames / 3
                 self.screen.blit(self.hit_text, self.hit_text_box)
                 self.hit_text_frames += 1
                 if self.hit_text_frames > self.hit_text_max_frames:

@@ -46,7 +46,6 @@ class Menu:
             self.library = load(open('library/saved.library', 'rb'))
         else:
             self.library = Library()
-
         self.delay_time = 2
         self.audio_device = 1
 
@@ -59,14 +58,15 @@ class Menu:
         # self.enabled_layers_keys = {'C': 'f', 'D': 'j', 'E': 'k'}
         # self.enabled_layers_keys = {'A': 'f', 'B': 'j'}
         # self.enabled_layers_keys = {'A': 's', 'B': 'd', 'E': 'k', 'F': 'l'}
-        self.preview_length = 1.25
+        self.preview_length = 1.2
         self.prune_unused_layers = False
-        self.latency = self.audio_player.device.get_output_latency() * 0.25
+        self.latency = self.audio_player.device.get_output_latency() * 0
 
         # Fonts
         self.generic_font = Font('font/kawashiro_gothic_unicode.ttf', 24)
         self.large_font = Font('font/kawashiro_gothic_unicode.ttf', 36)
         self.small_font = Font('font/kawashiro_gothic_unicode.ttf', 18)
+        self.tiny_font = Font('font/kawashiro_gothic_unicode.ttf', 14)
 
         # GUI variables
         self.redraw_screen = True
@@ -161,8 +161,8 @@ class Menu:
     def render_selected_track_data(self):
         if self.selected_tracks[3]:
             self.select_track_title = self.small_font.render(f'{self.selected_tracks[3].title}', True, Menu.D_COLOR)
-            self.select_track_artist = self.small_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
-            self.select_track_album = self.small_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
+            self.select_track_artist = self.tiny_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
+            self.select_track_album = self.tiny_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
             self.select_track_high_score = self.small_font.render(f'High Score: {self.selected_tracks[3].high_score}', True, Menu.WHITE)
             self.select_track_high_score_accuracy = self.small_font.render(f'{self.selected_tracks[3].high_score_accuracy:.2f}%', True, Menu.WHITE)
             self.select_track_high_score_layers = self.small_font.render(f'{self.selected_tracks[3].high_score_layers}', True, Menu.WHITE)
@@ -196,7 +196,7 @@ class Menu:
                     if self.label_selection_index == 0:
                         self.current_screen = Menu.TRACK_SELECT
                         self.redraw_screen = True
-                        pygame.key.set_repeat(250, 50)
+                        pygame.key.set_repeat(250, 25)
                     elif self.label_selection_index == 1:
                         self.current_screen = Menu.SETTINGS
                         self.redraw_screen = True
@@ -240,7 +240,7 @@ class Menu:
                         self.redraw_screen = True
                         pygame.key.set_repeat()
                         self.play_track(self.selected_tracks[3])
-                        pygame.key.set_repeat(250, 50)
+                        pygame.key.set_repeat(250, 25)
 
                     elif event.key == pygame.K_BACKSPACE:
                         self.redraw_screen = True
@@ -321,4 +321,5 @@ class Menu:
 
     def close_menu(self):
         self.save_library()
+        self.audio_player.idle.wait()
         self.audio_player.close()

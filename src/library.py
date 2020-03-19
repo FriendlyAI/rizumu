@@ -36,6 +36,9 @@ class Library:
                 elif sort_title < self.saved_tracks[middle_index].title.lower():
                     end_index = middle_index
 
+    def remove_track(self, index):
+        self.saved_tracks.pop(index)
+
     def get_tracks(self, center_index):
         tracks = []
         for i in range(center_index - 3, center_index + 4):

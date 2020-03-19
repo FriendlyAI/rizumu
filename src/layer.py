@@ -17,7 +17,7 @@ class Layer:
         self.shadows = []
         self.key = key
 
-        self.line_thickness = 5
+        self.line_thickness = 3
         self.key_label_text = None
         self.key_label_text_box = None
 
@@ -25,7 +25,7 @@ class Layer:
         if self.key:
             self.key_label_text = font.render(self.key, True, self.color)
             self.key_label_text_box = self.key_label_text.get_rect()
-            self.key_label_text_box.center = center, track_height + 40
+            self.key_label_text_box.center = center, track_height + 50
 
     def set_line_thickness(self, num_pixels):
         self.line_thickness = num_pixels
