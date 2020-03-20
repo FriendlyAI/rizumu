@@ -58,18 +58,18 @@ class Menu:
         pygame.mouse.set_visible(False)
 
         # In-game options
-        self.enabled_layers_keys = {'A': 's', 'B': 'd', 'C': 'f', 'D': 'j', 'E': 'k', 'F': 'l'}
-        # self.enabled_layers_keys = {'A': 's', 'B': 'd', 'F': 'l'}
-        # self.enabled_layers_keys = {'C': 'f', 'D': 'j', 'E': 'k'}
-        # self.enabled_layers_keys = {'A': 'f', 'B': 'j'}
-        # self.enabled_layers_keys = {'A': 's', 'B': 'd', 'E': 'k', 'F': 'l'}
+        self.enabled_layers_keys = {'A': ord('s'), 'B': ord('d'), 'C': ord('f'), 'D': ord('j'), 'E': ord('k'), 'F': ord('l')}
+        # self.enabled_layers_keys = {'B': ord('d'), 'D': ord('j'), 'F': ord('l')}
+        # self.enabled_layers_keys = {'A': ord('s'), 'B': ord('d'), 'F': ord('l')}
+        # self.enabled_layers_keys = {'C': ord('f'), 'D': ord('j'), 'E': ord('k')}
+        # self.enabled_layers_keys = {'A': ord('f'), 'B': ord('j')}
         self.preview_length = 1.2
         self.prune_unused_layers = False
         self.latency = self.audio_player.device.get_output_latency() * 0
 
         # Fonts
-        self.generic_font = Font('font/kawashiro_gothic_unicode.ttf', 24)
-        self.large_font = Font('font/kawashiro_gothic_unicode.ttf', 36)
+        self.large_font = Font('font/unifont.ttf', 36)
+        self.generic_font = Font('font/unifont.ttf', 26)
 
         # GUI variables
         self.redraw_screen = True
@@ -130,8 +130,8 @@ class Menu:
 
         self.select_edit = self.generic_font.render('e: Edit', True, Menu.WHITE)
         self.select_new = self.generic_font.render('n: New', True, Menu.WHITE)
-        self.select_back = self.generic_font.render('⇤ : Back', True, Menu.WHITE)
-        self.select_play = self.generic_font.render('↵ : Play', True, Menu.WHITE)
+        self.select_back = self.generic_font.render('⌫ : Back', True, Menu.WHITE)
+        self.select_play = self.generic_font.render('⏎ : Play', True, Menu.WHITE)
 
         '''
         Track setup screen objects
@@ -268,15 +268,17 @@ class Menu:
             self.screen.blit(self.select_track_0, (15, 30))
             self.screen.blit(self.select_track_1, (30, 100))
             self.screen.blit(self.select_track_2, (45, 170))
-            self.screen.blit(self.select_track_3, (60, 240))
+            select_track_3_text_box = self.select_track_3.get_rect()
+            select_track_3_text_box.center = 0, 250
+            self.screen.blit(self.select_track_3, (60, select_track_3_text_box[1]))
             self.screen.blit(self.select_track_4, (45, 310))
             self.screen.blit(self.select_track_5, (30, 380))
             self.screen.blit(self.select_track_6, (15, 450))
 
             self.screen.blit(self.select_edit, (15, self.height - 30))
-            self.screen.blit(self.select_new, (100, self.height - 30))
-            self.screen.blit(self.select_back, (self.width - 175, self.height - 30))
-            self.screen.blit(self.select_play, (self.width - 75, self.height - 30))
+            self.screen.blit(self.select_new, (165, self.height - 30))
+            self.screen.blit(self.select_back, (self.width - 300, self.height - 30))
+            self.screen.blit(self.select_play, (self.width - 150, self.height - 30))
 
             if self.selected_tracks[3]:
                 self.screen.blit(self.select_track_title, (15, 525))

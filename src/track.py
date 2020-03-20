@@ -32,7 +32,7 @@ class Track:
             self.title = tags.get('TITLE', ['UNKNOWN'])[0]
             self.artist = tags.get('ARTIST', ['UNKNOWN'])[0]
             self.album = tags.get('ALBUM', ['UNKNOWN'])[0]
-            self.duration = int(info.length)
+            self.duration = float(info.length)
 
         elif file_extension == '.opus':
             reader = OggOpus(self.audio_filepath)
@@ -40,7 +40,7 @@ class Track:
             self.title = tags.get('TITLE', ['UNKNOWN'])[0]
             self.artist = tags.get('ARTIST', ['UNKNOWN'])[0]
             self.album = tags.get('ALBUM', ['UNKNOWN'])[0]
-            self.duration = int(info.length)
+            self.duration = float(info.length)
 
         elif file_extension == '.mp3':
             reader = MP3(self.audio_filepath)
@@ -48,7 +48,7 @@ class Track:
             self.title = tags.get('TIT2', ['UNKNOWN'])[0]
             self.artist = tags.get('TPE1', ['UNKNOWN'])[0]
             self.album = tags.get('TALB', ['UNKNOWN'])[0]
-            self.duration = int(info.length)
+            self.duration = float(info.length)
 
         elif file_extension == '.m4a':
             reader = MP4(self.audio_filepath)
@@ -56,7 +56,7 @@ class Track:
             self.title = tags.get('\xa9nam', ['UNKNOWN'])[0]
             self.artist = tags.get('\xa9ART', ['UNKNOWN'])[0]
             self.album = tags.get('\xa9alb', ['UNKNOWN'])[0]
-            self.duration = int(info.length)
+            self.duration = float(info.length)
 
         else:
             return

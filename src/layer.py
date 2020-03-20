@@ -21,12 +21,6 @@ class Layer:
         self.key_label_text = None
         self.key_label_text_box = None
 
-    def generate_layer_label(self, font, center, track_height):
-        if self.key:
-            self.key_label_text = font.render(self.key, True, self.color)
-            self.key_label_text_box = self.key_label_text.get_rect()
-            self.key_label_text_box.center = center, track_height + 50
-
     def set_line_thickness(self, num_pixels):
         self.line_thickness = num_pixels
 

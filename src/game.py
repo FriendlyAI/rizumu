@@ -27,7 +27,7 @@ class Game:
         self.width = width
         self.track_width = int(self.width * .6)
         self.height = height
-        self.track_height = int(self.height * .8)
+        self.track_height = self.height - 150
         self.bottom_offset = self.height - self.track_height
         self.preview_length = preview_length  # seconds
 
@@ -36,11 +36,10 @@ class Game:
 
         self.screen = screen
 
-        self.huge_ascii_font = Font('font/good_times_ascii.ttf', 64)
-        self.large_ascii_font = Font('font/good_times_ascii.ttf', 36)
-        self.generic_ascii_font = Font('font/good_times_ascii.ttf', 24)
-        self.small_ascii_font = Font('font/good_times_ascii.ttf', 18)
-        self.unicode_font = Font('font/kawashiro_gothic_unicode.ttf', 18)
+        self.huge_font = Font('font/unifont.ttf', 64)
+        self.large_font = Font('font/unifont.ttf', 36)
+        self.generic_font = Font('font/unifont.ttf', 26)
+        self.small_font = Font('font/unifont.ttf', 20)
 
         self.beat_width = self.track_height / self.num_layers / 3
         self.beat_height = self.pixels_per_second / 30
@@ -48,9 +47,6 @@ class Game:
         self.layer_separation = (self.track_width - self.num_layers * self.beat_width) / (self.num_layers + 1)
         self.layer_centers = [self.layer_separation * (i + 1) + (self.beat_width * (2 * i + 1) / 2)
                               for i in range(0, self.num_layers)]
-
-        for layer, center in zip(sorted(self.layers.keys()), self.layer_centers):
-            self.layers[layer].generate_layer_label(self.small_ascii_font, center, self.track_height)
 
         self.clock = clock
 
@@ -73,9 +69,9 @@ class Game:
         self.hit_text = None
         self.hit_text_box = None
 
-        self.track_title_text = self.unicode_font.render(f'{self.track.title}', True, (255, 255, 255))
-        self.track_artist_text = self.unicode_font.render(f'{self.track.artist}', True, (255, 255, 255))
-        self.track_album_text = self.unicode_font.render(f'{self.track.album}', True, (255, 255, 255))
+        self.track_title_text = self.small_font.render(f'{self.track.title}', True, (255, 255, 255))
+        self.track_artist_text = self.small_font.render(f'{self.track.artist}', True, (255, 255, 255))
+        self.track_album_text = self.small_font.render(f'{self.track.album}', True, (255, 255, 255))
 
         self.paused = False
         self.pause_time = 0
@@ -115,17 +111,17 @@ class Game:
             self.score += int(30 * self.combo_multiplier)
             self.num_perfect += 1
             self.combo += 3
-            return 'perfect!', self.perfect_color
+            return 'PERFECT!', self.perfect_color
         elif time_difference < self.lenience * 2 / 3:
             self.score += int(20 * self.combo_multiplier)
             self.num_great += 1
             self.combo += 2
-            return 'great!', self.great_color
+            return 'GREAT!', self.great_color
         else:
             self.score += int(10 * self.combo_multiplier)
             self.num_ok += 1
             self.combo += 1
-            return 'ok!', self.ok_color
+            return 'OK!', self.ok_color
 
     def calculate_accuracy(self):
         num_hit = self.num_perfect + self.num_great + self.num_ok
@@ -143,7 +139,7 @@ class Game:
             current_song_time = time() - self.start_time
 
             if audio_player_time != 0:
-                self.average_time_difference += (current_song_time - audio_player_time - self.average_time_difference) / 60
+                self.average_time_difference += (current_song_time - audio_player_time - self.average_time_difference) / 100
                 self.start_time += self.average_time_difference * .05
 
             current_song_time -= self.latency
@@ -180,12 +176,6 @@ class Game:
                 pygame.draw.line(self.screen, (0, 0, 0), (self.track_width / 3, self.track_height - 3), (self.track_width / 3, self.track_height + 3), 7)
                 pygame.draw.line(self.screen, (0, 0, 0), (self.track_width * 2 / 3, self.track_height - 3), (self.track_width * 2 / 3, self.track_height + 3), 7)
 
-            # Draw layer key labels
-            for layer in self.enabled_layers:
-                layer_object = self.layers.get(layer, None)
-                if layer_object:
-                    self.screen.blit(layer_object.key_label_text, layer_object.key_label_text_box)
-
             # Draw progress bar
             pygame.draw.line(self.screen, (255, 255, 255), (0, self.height - 3), (self.track_width * (current_song_time if current_song_time > 0 else 0) / self.track.duration, self.height - 3), 5)
 
@@ -195,33 +185,33 @@ class Game:
             self.screen.blit(self.track_album_text, (self.track_width + 20, self.height * .15))
 
             # Draw realtime score labels
-            score_text = self.large_ascii_font.render(f'{self.score} x {self.combo_multiplier:.1f}', True, (255, 255, 255))
+            score_text = self.large_font.render(f'{self.score} × {self.combo_multiplier:.1f}', True, (255, 255, 255))
             self.screen.blit(score_text, (self.track_width + 20, self.height * .2))
 
-            accuracy_text = self.large_ascii_font.render(f'{self.calculate_accuracy():.2f}%', True, (255, 255, 255))
+            accuracy_text = self.large_font.render(f'{self.calculate_accuracy():.2f}%', True, (255, 255, 255))
             self.screen.blit(accuracy_text, (self.track_width + 20, self.height * .275))
 
-            num_perfect_text = self.generic_ascii_font.render(f'{self.num_perfect}', True, self.perfect_color)
+            num_perfect_text = self.large_font.render(f'{self.num_perfect}', True, self.perfect_color)
             self.screen.blit(num_perfect_text, (self.track_width + 20, self.height * .35))
 
-            num_great_text = self.generic_ascii_font.render(f'{self.num_great}', True, self.great_color)
+            num_great_text = self.large_font.render(f'{self.num_great}', True, self.great_color)
             self.screen.blit(num_great_text, (self.track_width + 110, self.height * .35))
 
-            num_ok_text = self.generic_ascii_font.render(f'{self.num_ok}', True, self.ok_color)
+            num_ok_text = self.large_font.render(f'{self.num_ok}', True, self.ok_color)
             self.screen.blit(num_ok_text, (self.track_width + 200, self.height * .35))
 
-            num_missed_text = self.generic_ascii_font.render(f'{self.num_missed}', True, self.missed_color)
+            num_missed_text = self.large_font.render(f'{self.num_missed}', True, self.missed_color)
             self.screen.blit(num_missed_text, (self.track_width + 290, self.height * .35))
 
             # Draw time
-            time_text = self.huge_ascii_font.render(f'{seconds_to_readable_time(current_song_time)}', True, (255, 255, 255))
+            time_text = self.huge_font.render(f'{seconds_to_readable_time(current_song_time)}', True, (255, 255, 255))
             time_text_box = time_text.get_rect()
             time_text_box.center = self.track_width + (self.width - self.track_width) / 2, self.height * .5
             self.screen.blit(time_text, time_text_box)
 
             # Draw fps
-            fps_text = self.small_ascii_font.render(f'{self.clock.get_fps():.1f}', True, (255, 255, 255))
-            self.screen.blit(fps_text, (self.width - 70, 10))
+            fps_text = self.small_font.render(f'{self.clock.get_fps():.1f}', True, (255, 255, 255))
+            self.screen.blit(fps_text, (self.width - 55, 10))
 
             # Draw track and beats
             missed = False
@@ -250,7 +240,6 @@ class Game:
                                           self.pixels_per_second * (self.preview_length - beat.time + current_song_time) - self.beat_height / 2,
                                           self.beat_width,
                                           self.beat_height))
-
                     else:
                         break
 
@@ -277,7 +266,7 @@ class Game:
                     else:
                         for layer in self.enabled_layers:
                             layer_object = self.layers[layer]
-                            if event.key == ord(layer_object.key):
+                            if event.key == layer_object.key:
                                 layer_object.set_line_thickness(5)
                                 if layer_object.count_remaining_beats() > 0:
                                     time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
@@ -285,7 +274,7 @@ class Game:
                                         beat_accuracy, color = self.score_beat(time_difference)
                                         layer_object.remove_last_beat()
 
-                                        self.hit_text = self.generic_ascii_font.render(beat_accuracy, True, color)
+                                        self.hit_text = self.large_font.render(beat_accuracy, True, color)
                                         self.hit_text_box = self.hit_text.get_rect()
                                         self.hit_text_frames = 0
                                 break
@@ -293,7 +282,7 @@ class Game:
                 elif event.type == pygame.KEYUP:
                     for layer in self.enabled_layers:
                         layer_object = self.layers[layer]
-                        if event.key == ord(layer_object.key):
+                        if event.key == layer_object.key:
                             layer_object.set_line_thickness(3)
                             break
 
@@ -303,7 +292,7 @@ class Game:
                     return
 
             if missed:
-                self.hit_text = self.generic_ascii_font.render('miss!', True, self.missed_color)
+                self.hit_text = self.large_font.render('MISS!', True, self.missed_color)
                 self.hit_text_box = self.hit_text.get_rect()
                 self.hit_text_frames = 0
 
@@ -311,7 +300,7 @@ class Game:
 
             # Draw hit text
             if self.hit_text:
-                self.hit_text_box.center = self.track_width / 2, self.height * .95 - self.hit_text_frames / 2
+                self.hit_text_box.center = self.track_width / 2, self.height - 50 - self.hit_text_frames / 2
                 self.screen.blit(self.hit_text, self.hit_text_box)
                 self.hit_text_frames += 1
                 if self.hit_text_frames > self.hit_text_max_frames:
@@ -347,32 +336,32 @@ class Game:
             self.screen.fill((0, 0, 0))
             self.draw_score = False
 
-            final_score_perfect_text = self.large_ascii_font.render(f'perfect: {self.num_perfect}', True, self.perfect_color)
+            final_score_perfect_text = self.large_font.render(f'perfect: {self.num_perfect}', True, self.perfect_color)
             final_score_perfect_text_box = final_score_perfect_text.get_rect()
             final_score_perfect_text_box.center = self.width / 2, self.height / 2 - 250
             self.screen.blit(final_score_perfect_text, final_score_perfect_text_box)
 
-            final_score_great_text = self.large_ascii_font.render(f'great: {self.num_great}', True, self.great_color)
+            final_score_great_text = self.large_font.render(f'great: {self.num_great}', True, self.great_color)
             final_score_great_text_box = final_score_great_text.get_rect()
             final_score_great_text_box.center = self.width / 2, self.height / 2 - 200
             self.screen.blit(final_score_great_text, final_score_great_text_box)
 
-            final_score_ok_text = self.large_ascii_font.render(f'ok: {self.num_ok}', True, self.ok_color)
+            final_score_ok_text = self.large_font.render(f'ok: {self.num_ok}', True, self.ok_color)
             final_score_ok_text_box = final_score_ok_text.get_rect()
             final_score_ok_text_box.center = self.width / 2, self.height / 2 - 150
             self.screen.blit(final_score_ok_text, final_score_ok_text_box)
 
-            final_score_missed_text = self.large_ascii_font.render(f'missed: {self.num_missed}', True, self.missed_color)
+            final_score_missed_text = self.large_font.render(f'missed: {self.num_missed}', True, self.missed_color)
             final_score_missed_text_box = final_score_missed_text.get_rect()
             final_score_missed_text_box.center = self.width / 2, self.height / 2 - 100
             self.screen.blit(final_score_missed_text, final_score_missed_text_box)
 
-            final_score_accuracy_text = self.large_ascii_font.render(f'accuracy: {self.calculate_accuracy():.2f}%', True, (255, 255, 255))
+            final_score_accuracy_text = self.large_font.render(f'accuracy: {self.calculate_accuracy():.2f}%', True, (255, 255, 255))
             final_score_accuracy_text_box = final_score_accuracy_text.get_rect()
             final_score_accuracy_text_box.center = self.width / 2, self.height / 2 + 20
             self.screen.blit(final_score_accuracy_text, final_score_accuracy_text_box)
 
-            final_score_text = self.large_ascii_font.render(f'score: {self.score}', True, (255, 255, 255))
+            final_score_text = self.large_font.render(f'score: {self.score}', True, (255, 255, 255))
             final_score_text_box = final_score_text.get_rect()
             final_score_text_box.center = self.width / 2, self.height / 2 + 140
             self.screen.blit(final_score_text, final_score_text_box)
