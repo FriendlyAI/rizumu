@@ -36,7 +36,7 @@ class Library:
                     end_index = middle_index
 
     def remove_track(self, index):
-        self.saved_tracks.pop(index)
+        return self.saved_tracks.pop(index)
 
     def get_tracks(self, center_index):
         tracks = []

@@ -339,7 +339,7 @@ class Menu:
                         self.current_screen = Menu.TRACK_SELECT
                         if new_track:
                             new_index = self.library.add_track(new_track)
-                            if new_index:
+                            if new_index is not None:
                                 self.track_selection_index = new_index
                                 self.selected_tracks = self.library.get_tracks(self.track_selection_index)
                                 self.render_selected_tracks()
@@ -411,6 +411,8 @@ class Menu:
                         self.current_screen = Menu.TRACK_SELECT
                         return
                     elif event.key == pygame.K_s:
+                        if track.title != old_title:
+                            self.library.add_track(self.library.remove_track(self.track_selection_index))
                         self.render_selected_tracks()
                         self.render_selected_track_data()
                         self.current_screen = Menu.TRACK_SELECT
