@@ -5,8 +5,7 @@ class Library:
     def __init__(self):
         self.saved_tracks = []
 
-    def add_track(self, audio_filepath):
-        new_track = Track(audio_filepath)
+    def add_track(self, new_track):
         sort_title = new_track.title.lower()
 
         start_index = 0

@@ -9,9 +9,9 @@ from util import ALL_LAYERS
 
 
 class Track:
-    def __init__(self, audio_filepath, track_filepath=None):
+    def __init__(self, audio_filepath, map_filepath=None):
         self.audio_filepath = audio_filepath
-        self.track_filepath = track_filepath
+        self.map_filepath = map_filepath
         self.title = None
         self.artist = None
         self.album = None
@@ -62,16 +62,16 @@ class Track:
             return
 
     def generate_track_file(self):
-        if not self.track_filepath:
+        if not self.map_filepath:
             cleaned_artist = self.artist.replace('/', '／').replace('"', '')
             cleaned_title = self.title.replace('/', '／').replace('"', '')
             cleaned_album = self.album.replace('/', '／').replace('"', '')
-            self.track_filepath = f'library/tracks/{cleaned_artist} - {cleaned_title} - {cleaned_album}.map'
+            self.map_filepath = f'library/tracks/{cleaned_artist} - {cleaned_title} - {cleaned_album}.map'
         cleaned_audio_filepath = self.audio_filepath.replace('"', r'\"')
 
-        Popen(['bin/ctaff', '-i', f'{str(cleaned_audio_filepath)}', '-o', f'{self.track_filepath}']).wait()
+        Popen(['bin/ctaff', '-i', f'{str(cleaned_audio_filepath)}', '-o', f'{self.map_filepath}']).wait()
 
-        with open(self.track_filepath, 'rb') as f:
+        with open(self.map_filepath, 'rb') as f:
             while 1:
                 beat_layer = f.read(1).decode('ascii')
                 if not beat_layer:
@@ -81,8 +81,8 @@ class Track:
 
         self.difficulty = round(sum((self.num_beats[layer] for layer in ALL_LAYERS)) / self.duration, 1)
 
-    def set_track_filepath(self, track_filepath):
-        self.track_filepath = track_filepath
+    def set_map_filepath(self, map_filepath):
+        self.map_filepath = map_filepath
 
     def set_title(self, title):
         self.title = title

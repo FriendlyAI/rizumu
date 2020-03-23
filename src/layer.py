@@ -45,9 +45,6 @@ class Layer:
     def count_shadows(self):
         return len(self.shadows)
 
-    def get_shadow(self, index):
-        return self.shadows[index]
-
     def insert_shadow(self, beat):
         self.shadows.insert(0, beat)
 

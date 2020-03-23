@@ -20,7 +20,7 @@ class Game:
             self.layers[layer] = Layer(layer, enabled_layers_keys.get(layer, None))
 
         self.total_num_beats = 0
-        self.read_in_beats(self.track.track_filepath)
+        self.read_in_beats(self.track.map_filepath)
 
         self.num_layers = max(len(self.layers.keys()), 1)
 
@@ -32,7 +32,7 @@ class Game:
         self.preview_length = preview_length  # seconds
 
         self.pixels_per_second = self.track_height / self.preview_length
-        self.lenience = 0.075  # seconds +/- per beat
+        self.lenience = 0.1  # seconds +/- per beat
 
         self.screen = screen
 
@@ -85,8 +85,8 @@ class Game:
         self.draw_score = True
 
 
-    def read_in_beats(self, track_filepath):
-        with open(track_filepath, 'rb') as f:
+    def read_in_beats(self, map_filepath):
+        with open(map_filepath, 'rb') as f:
             while 1:
                 beat_layer = f.read(1).decode('ascii')
                 if not beat_layer:
@@ -107,12 +107,12 @@ class Game:
         self.total_num_beats = sum((self.track.num_beats[layer] for layer in self.enabled_layers))
 
     def score_beat(self, time_difference):
-        if time_difference < self.lenience / 3:
+        if time_difference < self.lenience / 4:
             self.score += int(30 * self.combo_multiplier)
             self.num_perfect += 1
             self.combo += 3
             return 'PERFECT!', self.perfect_color
-        elif time_difference < self.lenience * 2 / 3:
+        elif time_difference < self.lenience / 2:
             self.score += int(20 * self.combo_multiplier)
             self.num_great += 1
             self.combo += 2
@@ -225,7 +225,7 @@ class Game:
                 for i in range(layer_object.count_remaining_beats() - 1, -1, -1):
                     beat = layer_object.get_beat(i)
                     if beat.time <= current_song_time + self.preview_length:
-                        if abs(current_song_time - beat.time) <= self.lenience:
+                        if abs(current_song_time - beat.time) <= self.lenience * .25:
                             beat.set_color(self.great_color)
                         elif current_song_time - beat.time > self.lenience:  # missed, convert to shadow
                             beat.set_color(self.missed_color)
@@ -245,15 +245,14 @@ class Game:
 
                 # Draw shadows
                 if layer_object.count_shadows() > 0:
-                    for i in range(layer_object.count_shadows() - 1, -1, -1):
-                        shadow = layer_object.get_shadow(i)
+                    for shadow in layer_object.shadows:
                         pygame.draw.rect(self.screen, shadow.color,
                                          (center - self.beat_width / 2,
                                           self.pixels_per_second * (self.preview_length - shadow.time + current_song_time) - self.beat_height / 2,
                                           self.beat_width,
                                           self.beat_height))
 
-                    if current_song_time - self.bottom_offset / self.pixels_per_second > layer_object.get_shadow(-1).time:
+                    if current_song_time - self.bottom_offset / self.pixels_per_second > layer_object.shadows[-1].time:
                         layer_object.remove_last_shadow()
 
             # Check events
