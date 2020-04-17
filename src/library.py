@@ -25,7 +25,7 @@ class Library:
                     return middle_index
                 elif sort_title == self.saved_tracks[middle_index].title.lower():
                     if self.saved_tracks[middle_index] == new_track:
-                        return
+                        return middle_index
                     else:
                         self.saved_tracks.insert(middle_index, new_track)
                         new_track.generate_track_file()

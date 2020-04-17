@@ -33,7 +33,7 @@ class Menu:
     F_COLOR = (255, 128, 255)
     SELECTED_COLOR = D_COLOR
 
-    DIFFICULTY_COLORS = (C_COLOR, C_COLOR, B_COLOR, B_COLOR, A_COLOR, D_COLOR, E_COLOR, F_COLOR)
+    DIFFICULTY_COLORS = (C_COLOR, C_COLOR, C_COLOR, B_COLOR, B_COLOR, A_COLOR, D_COLOR, E_COLOR, F_COLOR)
 
     def __init__(self):
         pygame.init()
@@ -60,9 +60,9 @@ class Menu:
         pygame.mouse.set_visible(False)
 
         # In-game options
-        self.enabled_layers_keys = {'A': ord('s'), 'B': ord('d'), 'C': ord('f'), 'D': ord('j'), 'E': ord('k'), 'F': ord('l')}
+        # self.enabled_layers_keys = {'A': ord('s'), 'B': ord('d'), 'C': ord('f'), 'D': ord('j'), 'E': ord('k'), 'F': ord('l')}
         # self.enabled_layers_keys = {'B': ord('d'), 'D': ord('j'), 'F': ord('l')}
-        # self.enabled_layers_keys = {'C': ord('f'), 'D': ord('j'), 'E': ord('k')}
+        self.enabled_layers_keys = {'C': ord('f'), 'D': ord('j'), 'E': ord('k'), 'F': ord('l')}
         # self.enabled_layers_keys = {'A': ord('f'), 'B': ord('j')}
         self.preview_length = 1.2
         self.prune_unused_layers = False
@@ -176,7 +176,7 @@ class Menu:
             self.select_track_high_score_accuracy = self.generic_font.render(f'{self.selected_tracks[3].high_score_accuracy:.2f}%', True, Menu.WHITE)
             self.select_track_high_score_layers = self.generic_font.render(f'{self.selected_tracks[3].high_score_layers}', True, Menu.WHITE)
             self.select_track_duration = self.generic_font.render(f'{seconds_to_readable_time(self.selected_tracks[3].duration)}', True, Menu.WHITE)
-            self.select_track_difficulty = self.generic_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, Menu.DIFFICULTY_COLORS[min(7, int(self.selected_tracks[3].difficulty))])
+            self.select_track_difficulty = self.generic_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, Menu.DIFFICULTY_COLORS[min(8, int(self.selected_tracks[3].difficulty))])
 
             self.select_track_num_beats_A = self.generic_font.render(f'{self.selected_tracks[3].num_beats["A"]}', True, Menu.A_COLOR)
             self.select_track_num_beats_B = self.generic_font.render(f'{self.selected_tracks[3].num_beats["B"]}', True, Menu.B_COLOR)
@@ -339,6 +339,7 @@ class Menu:
                         self.current_screen = Menu.TRACK_SELECT
                         if new_track:
                             new_index = self.library.add_track(new_track)
+                            self.save_library()
                             if new_index is not None:
                                 self.track_selection_index = new_index
                                 self.selected_tracks = self.library.get_tracks(self.track_selection_index)
@@ -402,6 +403,7 @@ class Menu:
                             track.set_album(paste())
                             break
                     elif event.key == pygame.K_d:
+                        track.delete_map()
                         self.library.remove_track(self.track_selection_index)
                         if self.track_selection_index >= len(self.library.saved_tracks):
                             self.track_selection_index -= 1
@@ -413,6 +415,7 @@ class Menu:
                     elif event.key == pygame.K_s:
                         if track.title != old_title:
                             self.library.add_track(self.library.remove_track(self.track_selection_index))
+                        self.save_library()
                         self.render_selected_tracks()
                         self.render_selected_track_data()
                         self.current_screen = Menu.TRACK_SELECT
@@ -472,7 +475,7 @@ class Menu:
             self.audio_player.idle.wait()
             game = Game(self.screen, self.width, self.height, self.clock, self.audio_player, track, self.enabled_layers_keys, self.preview_length, self.prune_unused_layers, self.latency)
             game.start_game()
-
+        self.save_library()
         self.render_selected_track_data()
 
     def save_library(self):

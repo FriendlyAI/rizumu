@@ -1,3 +1,4 @@
+from os import remove
 from subprocess import Popen
 
 from mutagen.flac import FLAC
@@ -101,6 +102,12 @@ class Track:
 
     def set_high_score_layers(self, layers):
         self.high_score_layers = layers
+
+    def delete_map(self):
+        try:
+            remove(self.map_filepath)
+        except OSError:
+            pass
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.audio_filepath == other.audio_filepath

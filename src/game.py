@@ -74,9 +74,8 @@ class Game:
         self.track_album_text = self.small_font.render(f'{self.track.album}', True, (255, 255, 255))
 
         self.paused = False
-        self.pause_time = 0
 
-        self.start_time = 0
+        self.time = 0
         self.playing_screen = True
         self.score_screen = False
 
@@ -136,13 +135,12 @@ class Game:
         if not self.paused:
             # Calculate time
             audio_player_time = self.audio_player.get_time()
-            current_song_time = time() - self.start_time
 
             if audio_player_time != 0:
-                self.average_time_difference += (current_song_time - audio_player_time - self.average_time_difference) / 100
-                self.start_time += self.average_time_difference * .05
+                self.average_time_difference += (audio_player_time - self.time - self.average_time_difference) * .02
+                self.time += self.average_time_difference * .05
 
-            current_song_time -= self.latency
+            current_song_time = self.time - self.latency
 
             # Reset screen
             self.screen.fill((0, 0, 0))
@@ -261,7 +259,6 @@ class Game:
                     if event.key == pygame.K_ESCAPE and current_song_time > 0:
                         self.paused = True
                         self.audio_player.pause()
-                        self.pause_time = time()
                     else:
                         for layer in self.enabled_layers:
                             layer_object = self.layers[layer]
@@ -309,6 +306,8 @@ class Game:
             # Update display
             pygame.display.flip()
 
+            self.time += self.clock.tick(60) / 1000
+
         else:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -319,7 +318,6 @@ class Game:
                     if event.key == pygame.K_ESCAPE:
                         self.paused = False
                         self.audio_player.unpause()
-                        self.start_time += time() - self.pause_time
                     elif event.key == pygame.K_r:
                         self.close_game()
                         self.restart = True
@@ -328,7 +326,7 @@ class Game:
                         self.close_game()
                         return
 
-        self.clock.tick(60)
+            self.clock.tick(60)
 
     def draw_score_screen(self):
         if self.draw_score:
@@ -391,7 +389,7 @@ class Game:
 
     def start_game(self):
         self.audio_player.open_audio(self.track.audio_filepath)
-        self.start_time = time() + self.audio_player.delay_time - self.audio_player.get_fast_forward_time()
+        self.time = -self.audio_player.delay_time + self.audio_player.get_fast_forward_time()
         self.audio_player.play()
         self.display_loop()
 
