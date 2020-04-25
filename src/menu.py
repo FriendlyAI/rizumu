@@ -469,11 +469,11 @@ class Menu:
         self.close_menu()
 
     def play_track(self, track):
-        game = Game(self.screen, self.width, self.height, self.clock, self.audio_player, track, self.enabled_layers_keys, self.preview_length, self.prune_unused_layers, self.latency)
+        game = Game(self.screen, self.width, self.height, self.audio_player, track, self.enabled_layers_keys, self.preview_length, self.prune_unused_layers, self.latency)
         game.start_game()
         while game.restart:
             self.audio_player.idle.wait()
-            game = Game(self.screen, self.width, self.height, self.clock, self.audio_player, track, self.enabled_layers_keys, self.preview_length, self.prune_unused_layers, self.latency)
+            game = Game(self.screen, self.width, self.height, self.audio_player, track, self.enabled_layers_keys, self.preview_length, self.prune_unused_layers, self.latency)
             game.start_game()
         self.save_library()
         self.render_selected_track_data()

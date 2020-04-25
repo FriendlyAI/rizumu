@@ -29,6 +29,8 @@ class AudioPlayer:
         self.time = 0
         self.delay_time = delay_time
 
+        self.fast_forward_time = 0
+
     def get_devices(self):
         return [self.pyaudio.get_device_info_by_index(i)
                 for i in range(self.pyaudio.get_device_count())
@@ -51,12 +53,13 @@ class AudioPlayer:
 
         self.ffmpeg_process = Popen(ffmpeg_command, stdout=PIPE, stderr=DEVNULL)
         self.data_stream = self.ffmpeg_process.stdout
+        
         self.device.start_stream()
 
-        self.stream_open.set()
+        if self.fast_forward_time == 0:
+            self.fast_forward_time = self.device.get_write_available() / self.frame_size * self.frame_time
 
-    def get_fast_forward_time(self):
-        return self.device.get_write_available() / self.frame_size * self.frame_time
+        self.stream_open.set()
 
     def get_time(self):
         return self.time

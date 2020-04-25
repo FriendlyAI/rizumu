@@ -1,15 +1,15 @@
 from struct import unpack
-from time import time
 
 import pygame
 from pygame.font import Font
+from pygame.time import Clock
 
 from layer import Layer
 from util import ALL_LAYERS, seconds_to_readable_time
 
 
 class Game:
-    def __init__(self, screen, width, height, clock, audio_player, track, enabled_layers_keys, preview_length, prune_unused_layers, latency):
+    def __init__(self, screen, width, height, audio_player, track, enabled_layers_keys, preview_length, prune_unused_layers, latency):
         self.audio_player = audio_player
         self.track = track
         self.layers = {}
@@ -48,7 +48,7 @@ class Game:
         self.layer_centers = [self.layer_separation * (i + 1) + (self.beat_width * (2 * i + 1) / 2)
                               for i in range(0, self.num_layers)]
 
-        self.clock = clock
+        self.clock = Clock()
 
         self.latency = latency
         self.average_time_difference = 0
@@ -389,7 +389,7 @@ class Game:
 
     def start_game(self):
         self.audio_player.open_audio(self.track.audio_filepath)
-        self.time = -self.audio_player.delay_time + self.audio_player.get_fast_forward_time()
+        self.time = -self.audio_player.delay_time + self.audio_player.fast_forward_time
         self.audio_player.play()
         self.display_loop()
 
