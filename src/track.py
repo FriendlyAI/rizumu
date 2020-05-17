@@ -67,7 +67,7 @@ class Track:
             cleaned_artist = self.artist.replace('/', '／').replace('"', '')
             cleaned_title = self.title.replace('/', '／').replace('"', '')
             cleaned_album = self.album.replace('/', '／').replace('"', '')
-            self.map_filepath = f'library/tracks/{cleaned_artist} - {cleaned_title} - {cleaned_album}.map'
+            self.map_filepath = f'library/maps/{cleaned_artist} - {cleaned_title} - {cleaned_album}.map'
         cleaned_audio_filepath = self.audio_filepath.replace('"', r'\"')
 
         Popen(['bin/ctaff', '-i', f'{str(cleaned_audio_filepath)}', '-o', f'{self.map_filepath}']).wait()

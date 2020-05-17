@@ -229,7 +229,7 @@ class Menu:
 
     # noinspection PyArgumentList
     def draw_track_select(self):
-        pygame.key.set_repeat(250, 25)
+        pygame.key.set_repeat(250, 20)
         while 1:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -253,7 +253,7 @@ class Menu:
                             self.redraw_screen = True
                             pygame.key.set_repeat()
                             self.play_track(self.selected_tracks[3])
-                            pygame.key.set_repeat(250, 25)
+                            pygame.key.set_repeat(250, 20)
 
                         elif event.key == pygame.K_BACKSPACE:
                             self.redraw_screen = True

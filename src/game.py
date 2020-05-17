@@ -61,7 +61,7 @@ class Game:
         self.missed_color = (255, 128, 128)
 
         self.combo = 0
-        self.combo_multiplier = 1 + 0.2 * (min(30, self.combo) // 10)
+        self.combo_multiplier = 1.0
 
         self.hit_text_frames = 0
         self.hit_text_max_frames = 30
@@ -160,17 +160,17 @@ class Game:
             pygame.draw.line(self.screen, (192, 192, 192), (0, self.track_height), (self.track_width, self.track_height), 5)
 
             # Draw combo progress bar
-            if self.combo >= 75:
+            if self.combo >= 225:
                 self.combo_multiplier = 2.0
-            elif self.combo >= 50:
+            elif self.combo >= 150:
                 self.combo_multiplier = 1.5
-            elif self.combo >= 25:
+            elif self.combo >= 75:
                 self.combo_multiplier = 1.2
             else:
                 self.combo_multiplier = 1.0
 
-            pygame.draw.line(self.screen, (255, 255, 255), (0, self.track_height), (self.track_width * min(75, self.combo) / 75, self.track_height), 7)
-            if self.combo < 75:
+            pygame.draw.line(self.screen, (255, 255, 255), (0, self.track_height), (self.track_width * min(225, self.combo) / 225, self.track_height), 7)
+            if self.combo < 225:
                 pygame.draw.line(self.screen, (0, 0, 0), (self.track_width / 3, self.track_height - 3), (self.track_width / 3, self.track_height + 3), 7)
                 pygame.draw.line(self.screen, (0, 0, 0), (self.track_width * 2 / 3, self.track_height - 3), (self.track_width * 2 / 3, self.track_height + 3), 7)
 

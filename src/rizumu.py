@@ -21,7 +21,7 @@ try:
 except FileExistsError:
     pass
 try:
-    mkdir('library/tracks')
+    mkdir('library/maps')
 except FileExistsError:
     pass
 
