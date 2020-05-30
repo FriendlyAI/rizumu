@@ -47,7 +47,7 @@ class Menu:
 
         self.size = self.width, self.height = int(info.current_w * .75), info.current_h
         self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED | pygame.FULLSCREEN)
-        # pygame.display.set_icon(pygame.image.load('img/icon.png'))
+        pygame.display.set_icon(pygame.image.load('img/icon.png'))
 
         if isfile('library/saved.library'):
             self.library = load(open('library/saved.library', 'rb'))
