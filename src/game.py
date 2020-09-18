@@ -9,7 +9,7 @@ from util import ALL_LAYERS, seconds_to_readable_time
 
 
 class Game:
-    def __init__(self, screen, width, height, audio_player, track, enabled_layers_keys, preview_length, prune_unused_layers, latency):
+    def __init__(self, screen, width, height, audio_player, track, enabled_layers_keys, preview_length, lenience, prune_unused_layers, latency, play_hit_sound, hit_sound_data):
         self.audio_player = audio_player
         self.track = track
         self.layers = {}
@@ -30,9 +30,9 @@ class Game:
         self.track_height = self.height - 150
         self.bottom_offset = self.height - self.track_height
         self.preview_length = preview_length  # seconds
+        self.lenience = lenience
 
         self.pixels_per_second = self.track_height / self.preview_length
-        self.lenience = 0.1  # seconds +/- per beat
 
         self.screen = screen
 
@@ -42,7 +42,7 @@ class Game:
         self.small_font = Font('font/unifont.ttf', 20)
 
         self.beat_width = self.track_height / self.num_layers / 3
-        self.beat_height = self.pixels_per_second / 30
+        self.beat_height = self.pixels_per_second * self.lenience / 2  # height of perfect window
 
         self.layer_separation = (self.track_width - self.num_layers * self.beat_width) / (self.num_layers + 1)
         self.layer_centers = [self.layer_separation * (i + 1) + (self.beat_width * (2 * i + 1) / 2)
@@ -83,6 +83,8 @@ class Game:
 
         self.draw_score = True
 
+        self.play_hit_sound = play_hit_sound
+        self.hit_sound_data = hit_sound_data
 
     def read_in_beats(self, map_filepath):
         with open(map_filepath, 'rb') as f:
@@ -256,9 +258,13 @@ class Game:
             # Check events
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE and current_song_time > 0:
-                        self.paused = True
-                        self.audio_player.pause()
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
+                        if current_song_time > 0:
+                            self.paused = True
+                            self.audio_player.pause()
+                        else:
+                            self.close_game()
+                            return
                     else:
                         for layer in self.enabled_layers:
                             layer_object = self.layers[layer]
@@ -273,6 +279,16 @@ class Game:
                                         self.hit_text = self.large_font.render(beat_accuracy, True, color)
                                         self.hit_text_box = self.hit_text.get_rect()
                                         self.hit_text_frames = 0
+
+                                        if self.play_hit_sound:
+                                            layer_id = layer_object.layer_id
+                                            if layer_id in ('A', 'B'):
+                                                index = 0
+                                            else:  # layer_id in ('C', 'D', 'E', 'F')
+                                                index = 1
+
+                                            if not pygame.mixer.Channel(index).get_busy():
+                                                pygame.mixer.Channel(index).play(self.hit_sound_data[index])
                                 break
 
                 elif event.type == pygame.KEYUP:
@@ -315,7 +331,7 @@ class Game:
                     return
 
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
+                    if event.key == pygame.K_ESCAPE or event.key == pygame.K_SPACE:
                         self.paused = False
                         self.audio_player.unpause()
                     elif event.key == pygame.K_r:
@@ -326,7 +342,7 @@ class Game:
                         self.close_game()
                         return
 
-            self.clock.tick(60)
+            self.clock.tick(30)
 
     def draw_score_screen(self):
         if self.draw_score:

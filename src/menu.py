@@ -39,6 +39,7 @@ class Menu:
     DIFFICULTY_COLORS = (C_COLOR, C_COLOR, C_COLOR, B_COLOR, B_COLOR, A_COLOR, D_COLOR, E_COLOR, F_COLOR)
 
     def __init__(self):
+        pygame.mixer.pre_init(frequency=44100, size=-16, channels=2)
         pygame.init()
 
         self.clock = Clock()
@@ -54,12 +55,6 @@ class Menu:
         else:
             self.library = Library()
 
-        self.delay_time = 2
-        self.audio_device = 1
-
-        self.audio_player = AudioPlayer(self.delay_time)
-        self.audio_player.set_device(self.audio_device)
-
         pygame.mouse.set_visible(False)
 
         self.screen_calls = [self.close_menu,
@@ -71,17 +66,32 @@ class Menu:
                              self.draw_edit_track,
                              self.draw_search]
 
+        self.delay_time = 2  # Pre-track delay time
+
+        # Audio player
+        self.audio_device = 1
+        self.audio_player = AudioPlayer(self.delay_time)
+        self.audio_player.set_device(self.audio_device)
+        self.latency = self.audio_player.device.get_output_latency() * 0
+
         # In-game options
         self.layers_keys = {'A': [True, None], 'B': [True, None], 'C': [True, None], 'D': [True, None], 'E': [True, None], 'F': [True, None]}
         self.prune_unused_layers = False
 
-        self.preview_length = 1.2
-        self.latency = self.audio_player.device.get_output_latency() * 0
+        # Difficulty
+        self.preview_length = 0.75
+        self.lenience = 0.06  # seconds +/- per beat
 
         # Fonts
         self.large_font = Font('font/unifont.ttf', 36)
         self.generic_font = Font('font/unifont.ttf', 26)
         self.small_font = Font('font/unifont.ttf', 16)
+
+        # Sound Effects
+        self.play_hit_sound = True
+        self.bass_hit_sound_data = pygame.mixer.Sound(open('audio/bass.wav', 'rb').read())
+        self.high_hit_sound_data = pygame.mixer.Sound(open('audio/high.wav', 'rb').read())
+        pygame.mixer.set_num_channels(2)
 
         # GUI variables
         self.redraw_screen = True
@@ -147,7 +157,6 @@ class Menu:
         '''
         Track setup screen objects
         '''
-
         self.setup_toggle = self.generic_font.render('⏎ : Select/Toggle', True, Menu.WHITE)
         self.setup_back = self.select_back
 
@@ -346,11 +355,12 @@ class Menu:
                     elif event.key == pygame.K_UP:
                         label_selection_index = max(0, label_selection_index - 1)
                         break
-                    elif event.key != pygame.K_ESCAPE:
-                        for key, value in self.layers_keys.items():
-                            if value[1] == event.key:
-                                self.layers_keys[key][1] = None
-                        self.layers_keys[ALL_LAYERS[label_selection_index - 2]][1] = event.key
+                    elif event.key != pygame.K_ESCAPE and event.key != pygame.K_SPACE:
+                        if label_selection_index >= 2:
+                            for key, value in self.layers_keys.items():
+                                if value[1] == event.key:
+                                    self.layers_keys[key][1] = None
+                            self.layers_keys[ALL_LAYERS[label_selection_index - 2]][1] = event.key
 
             if self.redraw_screen:
                 self.redraw_screen = False
@@ -522,6 +532,7 @@ class Menu:
                     elif event.key == pygame.K_d:
                         track.delete_map()
                         self.library.remove_track(self.track_selection_index)
+                        self.save_library()
                         if self.track_selection_index >= len(self.library.saved_tracks):
                             self.track_selection_index -= 1
                         self.selected_tracks = self.library.get_tracks(self.track_selection_index)
@@ -580,15 +591,17 @@ class Menu:
                 break
 
     def play_track(self, track):
-        enabled_layers_keys = {layer: key[1] for layer, key in self.layers_keys.items() if key[0]}
-        game = Game(self.screen, self.width, self.height, self.audio_player, track, enabled_layers_keys, self.preview_length, self.prune_unused_layers, self.latency)
-        game.start_game()
-        while game.restart:
+        if isfile(track.audio_filepath) and isfile(track.map_filepath):
             self.audio_player.idle.wait()
-            game = Game(self.screen, self.width, self.height, self.audio_player, track, enabled_layers_keys, self.preview_length, self.prune_unused_layers, self.latency)
+            enabled_layers_keys = {layer: key[1] for layer, key in self.layers_keys.items() if key[0]}
+            game = Game(self.screen, self.width, self.height, self.audio_player, track, enabled_layers_keys, self.preview_length, self.lenience, self.prune_unused_layers, self.latency, self.play_hit_sound, [self.bass_hit_sound_data, self.high_hit_sound_data])
             game.start_game()
-        self.save_library()
-        self.render_selected_track_data()
+            while game.restart:
+                self.audio_player.idle.wait()
+                game = Game(self.screen, self.width, self.height, self.audio_player, track, enabled_layers_keys, self.preview_length, self.lenience, self.prune_unused_layers, self.latency, self.play_hit_sound, [self.bass_hit_sound_data, self.high_hit_sound_data])
+                game.start_game()
+            self.save_library()
+            self.render_selected_track_data()
 
     def save_library(self):
         dump(self.library, open('library/saved.library', 'wb'))

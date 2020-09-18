@@ -1,6 +1,7 @@
 from subprocess import Popen, PIPE, DEVNULL
 from threading import Thread, Event
 from time import sleep
+from struct import pack, unpack
 
 from pyaudio import PyAudio
 
