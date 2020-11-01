@@ -47,7 +47,7 @@ class Menu:
         info = pygame.display.Info()
 
         self.size = self.width, self.height = int(info.current_w * .75), info.current_h
-        self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED | pygame.FULLSCREEN)
+        self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED | pygame.FULLSCREEN, vsync=True)
         pygame.display.set_icon(pygame.image.load('img/icon.png'))
 
         if isfile('library/saved.library'):
@@ -79,7 +79,7 @@ class Menu:
         self.prune_unused_layers = False
 
         # Difficulty
-        self.preview_length = 0.75
+        self.preview_length = .6
         self.lenience = 0.06  # seconds +/- per beat
 
         # Fonts
@@ -180,24 +180,31 @@ class Menu:
         self.display_loop()
 
     def render_selected_tracks(self):
-        self.select_track_0 = self.generic_font.render(f'{self.selected_tracks[0]}', True, Menu.WHITE)
-        self.select_track_1 = self.generic_font.render(f'{self.selected_tracks[1]}', True, Menu.WHITE)
-        self.select_track_2 = self.generic_font.render(f'{self.selected_tracks[2]}', True, Menu.WHITE)
-        self.select_track_3 = self.generic_font.render(f'{self.selected_tracks[3]}', True, Menu.SELECTED_COLOR)
-        self.select_track_4 = self.generic_font.render(f'{self.selected_tracks[4]}', True, Menu.WHITE)
-        self.select_track_5 = self.generic_font.render(f'{self.selected_tracks[5]}', True, Menu.WHITE)
-        self.select_track_6 = self.generic_font.render(f'{self.selected_tracks[6]}', True, Menu.WHITE)
+        def get_color(track):
+            if not track:
+                return Menu.WHITE
+            else:
+                return Menu.DIFFICULTY_COLORS[min(8, int(track.difficulty))]
+
+        self.select_track_0 = self.generic_font.render(f'{self.selected_tracks[0]}', True, get_color(self.selected_tracks[0]))
+        self.select_track_1 = self.generic_font.render(f'{self.selected_tracks[1]}', True, get_color(self.selected_tracks[1]))
+        self.select_track_2 = self.generic_font.render(f'{self.selected_tracks[2]}', True, get_color(self.selected_tracks[2]))
+        self.select_track_3 = self.generic_font.render(f'{self.selected_tracks[3]}', True, get_color(self.selected_tracks[3]))
+        self.select_track_4 = self.generic_font.render(f'{self.selected_tracks[4]}', True, get_color(self.selected_tracks[4]))
+        self.select_track_5 = self.generic_font.render(f'{self.selected_tracks[5]}', True, get_color(self.selected_tracks[5]))
+        self.select_track_6 = self.generic_font.render(f'{self.selected_tracks[6]}', True, get_color(self.selected_tracks[6]))
 
     def render_selected_track_data(self):
         if self.selected_tracks[3]:
-            self.select_track_title = self.large_font.render(f'{self.selected_tracks[3].title}', True, Menu.D_COLOR)
+            color = Menu.DIFFICULTY_COLORS[min(8, int(self.selected_tracks[3].difficulty))]
+            self.select_track_title = self.large_font.render(f'{self.selected_tracks[3].title}', True, color)
             self.select_track_artist = self.generic_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
             self.select_track_album = self.generic_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
             self.select_track_high_score = self.generic_font.render(f'High Score: {self.selected_tracks[3].high_score}', True, Menu.WHITE)
             self.select_track_high_score_accuracy = self.generic_font.render(f'{self.selected_tracks[3].high_score_accuracy:.2f}%', True, Menu.WHITE)
             self.select_track_high_score_layers = self.generic_font.render(f'{self.selected_tracks[3].high_score_layers}', True, Menu.WHITE)
             self.select_track_duration = self.generic_font.render(f'{seconds_to_readable_time(self.selected_tracks[3].duration)}', True, Menu.WHITE)
-            self.select_track_difficulty = self.generic_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, Menu.DIFFICULTY_COLORS[min(8, int(self.selected_tracks[3].difficulty))])
+            self.select_track_difficulty = self.generic_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, color)
 
             self.select_track_num_beats_A = self.generic_font.render(f'{self.selected_tracks[3].num_beats["A"]}', True, Menu.A_COLOR)
             self.select_track_num_beats_B = self.generic_font.render(f'{self.selected_tracks[3].num_beats["B"]}', True, Menu.B_COLOR)
@@ -610,3 +617,4 @@ class Menu:
         self.save_library()
         self.audio_player.idle.wait()
         self.audio_player.close()
+        pygame.display.quit()
