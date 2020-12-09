@@ -24,10 +24,10 @@ class Game:
             if key:
                 self.key_to_layer[key] = layer_object
 
-        self.num_layers = max(len(self.layers.keys()), 1)
-
         self.total_num_beats = 0
         self.read_in_beats(self.track.map_filepath)
+
+        self.num_layers = max(len(self.layers.keys()), 1)
 
         self.width = width
         self.track_width = int(self.width * .6)
@@ -105,8 +105,7 @@ class Game:
 
         for layer in ALL_LAYERS:
             layer_object = self.layers[layer]
-            layer_object.count_beats()
-            if self.prune_unused_layers and (layer_object.num_beats == 0 or layer not in self.enabled_layers):
+            if self.prune_unused_layers and (layer_object.count_remaining_beats() == 0 or layer not in self.enabled_layers):
                 del self.layers[layer]
                 if layer in self.enabled_layers:
                     self.enabled_layers.remove(layer)
@@ -194,7 +193,7 @@ class Game:
             score_text = self.large_font.render(f'{self.score} × {self.combo_multiplier:.1f}', True, self.white)
             self.screen.blit(score_text, (self.track_width + 20, self.height * .2))
 
-            accuracy_text = self.large_font.render(f'{self.calculate_accuracy():.2f}%', True, self.white)
+            accuracy_text = self.large_font.render(f'{self.calculate_accuracy():.3f}%', True, self.white)
             self.screen.blit(accuracy_text, (self.track_width + 20, self.height * .275))
 
             num_perfect_text = self.large_font.render(f'{self.num_perfect}', True, self.perfect_color)
@@ -395,7 +394,7 @@ class Game:
             final_score_missed_text_box.center = self.width / 2, self.height / 2 - 100
             self.screen.blit(final_score_missed_text, final_score_missed_text_box)
 
-            final_score_accuracy_text = self.large_font.render(f'accuracy: {self.calculate_accuracy():.2f}%', True, self.white)
+            final_score_accuracy_text = self.large_font.render(f'accuracy: {self.calculate_accuracy():.3f}%', True, self.white)
             final_score_accuracy_text_box = final_score_accuracy_text.get_rect()
             final_score_accuracy_text_box.center = self.width / 2, self.height / 2 + 20
             self.screen.blit(final_score_accuracy_text, final_score_accuracy_text_box)

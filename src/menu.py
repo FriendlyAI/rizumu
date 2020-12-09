@@ -201,7 +201,7 @@ class Menu:
             self.select_track_artist = self.generic_font.render(f'{self.selected_tracks[3].artist}', True, Menu.WHITE)
             self.select_track_album = self.generic_font.render(f'{self.selected_tracks[3].album}', True, Menu.WHITE)
             self.select_track_high_score = self.generic_font.render(f'High Score: {self.selected_tracks[3].high_score}', True, Menu.WHITE)
-            self.select_track_high_score_accuracy = self.generic_font.render(f'{self.selected_tracks[3].high_score_accuracy:.2f}%', True, Menu.WHITE)
+            self.select_track_high_score_accuracy = self.generic_font.render(f'{self.selected_tracks[3].high_score_accuracy:.3f}%', True, Menu.WHITE)
             self.select_track_high_score_layers = self.generic_font.render(f'{self.selected_tracks[3].high_score_layers}', True, Menu.WHITE)
             self.select_track_duration = self.generic_font.render(f'{seconds_to_readable_time(self.selected_tracks[3].duration)}', True, Menu.WHITE)
             self.select_track_difficulty = self.generic_font.render(f'Difficulty: {self.selected_tracks[3].difficulty}', True, color)

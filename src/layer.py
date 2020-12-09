@@ -13,7 +13,6 @@ class Layer:
             'F': (255, 128, 255)
         }[layer_id]
         self.beats = []
-        self.num_beats = 0
         self.shadows = []
         self.key = key
 
@@ -25,10 +24,6 @@ class Layer:
         self.line_thickness = num_pixels
 
     # Beats
-    def count_beats(self):
-        self.num_beats = len(self.beats)
-        return self.num_beats
-
     def count_remaining_beats(self):
         return len(self.beats)
 
