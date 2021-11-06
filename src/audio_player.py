@@ -51,6 +51,7 @@ class AudioPlayer:
 
         ffmpeg_command = ['ffmpeg', '-i', filepath, '-loglevel', 'error', '-f', 's16le', '-ac', str(self.channels),
                           '-ar', str(self.sample_rate), '-']
+        # speed modifier: '-filter:a', 'atempo=0.5'
 
         self.ffmpeg_process = Popen(ffmpeg_command, stdout=PIPE, stderr=DEVNULL)
         self.data_stream = self.ffmpeg_process.stdout

@@ -1,4 +1,4 @@
-mutagen>=1.44.0
-PyAudio>=0.2.11
-pygame>=2.0.0
+mutagen==1.45.1
+PyAudio==0.2.11
+pygame==2.0.1
 pyperclip==1.8.1

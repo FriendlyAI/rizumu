@@ -47,8 +47,9 @@ class Menu:
         info = pygame.display.Info()
 
         self.size = self.width, self.height = int(info.current_w * .75), info.current_h
-        self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED | pygame.FULLSCREEN, vsync=True)
+        self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED | pygame.RESIZABLE, vsync=True)
         pygame.display.set_icon(pygame.image.load('img/icon.png'))
+        pygame.display.set_caption('RIZUMU')
 
         if isfile('library/saved.library'):
             self.library = load(open('library/saved.library', 'rb'))
@@ -79,7 +80,7 @@ class Menu:
         self.prune_unused_layers = False
 
         # Difficulty
-        self.preview_length = .6
+        self.preview_length = .5
         self.lenience = 0.06  # seconds +/- per beat
 
         # Fonts

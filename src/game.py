@@ -293,7 +293,7 @@ class Game:
                     else:
                         layer_object = self.key_to_layer.get(event.key, None)
                         if layer_object:
-                            layer_object.set_line_thickness(5)
+                            layer_object.set_line_thickness(7)
                             if layer_object.count_remaining_beats() > 0:
                                 time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
                                 if time_difference <= self.lenience:
