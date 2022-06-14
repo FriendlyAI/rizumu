@@ -235,18 +235,18 @@ class Game:
                         # if time_difference <= .01:
                         #     beat_accuracy, color = self.score_beat(time_difference)
                         #     layer_object.remove_last_beat()
-
+                        #
                         #     self.hit_text = self.large_font.render(beat_accuracy, True, color)
                         #     self.hit_text_box = self.hit_text.get_rect()
                         #     self.hit_text_frames = 0
-
+                        #
                         #     if self.play_hit_sound:
                         #         layer_id = layer_object.layer_id
                         #         if layer_id in ('A', 'B'):
                         #             index = 0
                         #         else:  # layer_id in ('C', 'D', 'E', 'F')
                         #             index = 1
-
+                        #
                         #         if not pygame.mixer.Channel(index).get_busy():
                         #             pygame.mixer.Channel(index).play(self.hit_sound_data[index])
 

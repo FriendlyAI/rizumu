@@ -46,7 +46,7 @@ class Menu:
 
         info = pygame.display.Info()
 
-        self.size = self.width, self.height = int(info.current_w * .75), info.current_h
+        self.size = self.width, self.height = 1080, 900
         self.screen = pygame.display.set_mode(self.size, flags=pygame.SCALED | pygame.RESIZABLE, vsync=True)
         pygame.display.set_icon(pygame.image.load('img/icon.png'))
         pygame.display.set_caption('RIZUMU')
@@ -70,7 +70,8 @@ class Menu:
         self.delay_time = 2  # Pre-track delay time
 
         # Audio player
-        self.audio_device = 1
+        # print(self.audio_player.get_devices())
+        self.audio_device = 0  # this should be a configurable setting
         self.audio_player = AudioPlayer(self.delay_time)
         self.audio_player.set_device(self.audio_device)
         self.latency = self.audio_player.device.get_output_latency() * 0
