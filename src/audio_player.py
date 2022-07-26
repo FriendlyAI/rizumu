@@ -1,7 +1,6 @@
 from subprocess import Popen, PIPE, DEVNULL
 from threading import Thread, Event
 from time import sleep
-from struct import pack, unpack
 
 from pyaudio import PyAudio
 
@@ -38,11 +37,16 @@ class AudioPlayer:
                 if self.pyaudio.get_device_info_by_index(i)['maxOutputChannels'] == self.channels]
 
     def set_device(self, device_index):
-        self.device = self.pyaudio.open(format=self.pyaudio.get_format_from_width(self.sample_width),
-                                        channels=self.channels,
-                                        rate=self.sample_rate,
-                                        output=True,
-                                        output_device_index=device_index)
+        try:
+            self.device = self.pyaudio.open(format=self.pyaudio.get_format_from_width(self.sample_width),
+                                            channels=self.channels,
+                                            rate=self.sample_rate,
+                                            output=True,
+                                            output_device_index=device_index)
+            return 0
+        except OSError:
+            print('ERROR: Invalid audio device set.')
+            return 1
 
     def open_audio(self, filepath):
         if not self.device:

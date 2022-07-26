@@ -92,6 +92,9 @@ class Game:
         self.play_hit_sound = play_hit_sound
         self.hit_sound_data = hit_sound_data
 
+        self.cheat = False
+        self.cheated = False
+
     def read_in_beats(self, map_filepath):
         with open(map_filepath, 'rb') as f:
             while 1:
@@ -190,7 +193,7 @@ class Game:
             self.screen.blit(self.track_album_text, (self.track_width + 20, self.height * .15))
 
             # Draw realtime score labels
-            score_text = self.large_font.render(f'{self.score} × {self.combo_multiplier:.1f}', True, self.white)
+            score_text = self.large_font.render(f'{self.score} × {self.combo_multiplier:.1f}', True, self.white if not self.cheated else self.missed_color)
             self.screen.blit(score_text, (self.track_width + 20, self.height * .2))
 
             accuracy_text = self.large_font.render(f'{self.calculate_accuracy():.3f}%', True, self.white)
@@ -231,24 +234,25 @@ class Game:
                     beat = layer_object.get_beat(i)
                     if beat.time - (self.beat_height / self.pixels_per_second / 2) <= current_song_time + self.preview_length:
                         # Autoplayer
-                        # time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
-                        # if time_difference <= .01:
-                        #     beat_accuracy, color = self.score_beat(time_difference)
-                        #     layer_object.remove_last_beat()
-                        #
-                        #     self.hit_text = self.large_font.render(beat_accuracy, True, color)
-                        #     self.hit_text_box = self.hit_text.get_rect()
-                        #     self.hit_text_frames = 0
-                        #
-                        #     if self.play_hit_sound:
-                        #         layer_id = layer_object.layer_id
-                        #         if layer_id in ('A', 'B'):
-                        #             index = 0
-                        #         else:  # layer_id in ('C', 'D', 'E', 'F')
-                        #             index = 1
-                        #
-                        #         if not pygame.mixer.Channel(index).get_busy():
-                        #             pygame.mixer.Channel(index).play(self.hit_sound_data[index])
+                        if self.cheat:
+                            time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
+                            if time_difference <= .01:
+                                beat_accuracy, color = self.score_beat(time_difference)
+                                layer_object.remove_last_beat()
+                            
+                                self.hit_text = self.large_font.render(beat_accuracy, True, color)
+                                self.hit_text_box = self.hit_text.get_rect()
+                                self.hit_text_frames = 0
+                            
+                                if self.play_hit_sound:
+                                    layer_id = layer_object.layer_id
+                                    if layer_id in ('A', 'B'):
+                                        index = 0
+                                    else:  # layer_id in ('C', 'D', 'E', 'F')
+                                        index = 1
+                            
+                                    if not pygame.mixer.Channel(index).get_busy():
+                                        pygame.mixer.Channel(index).play(self.hit_sound_data[index])
 
                         if abs(current_song_time - beat.time) <= self.lenience * .25:
                             beat.set_color(self.great_color)
@@ -290,6 +294,9 @@ class Game:
                         else:
                             self.close_game()
                             return
+                    elif event.key == pygame.K_CAPSLOCK:
+                        self.cheated = True
+                        self.cheat = not self.cheat
                     else:
                         layer_object = self.key_to_layer.get(event.key, None)
                         if layer_object:
@@ -347,7 +354,7 @@ class Game:
 
             # better frame accuracy, uses more CPU
             # self.time += self.clock.tick_busy_loop(60) / 1000
-            self.time += self.clock.tick(60) / 1000
+            self.time += self.clock.tick() / 1000
 
         else:
             for event in pygame.event.get():
@@ -408,7 +415,7 @@ class Game:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT or event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
-                if self.score > self.track.high_score:
+                if self.score > self.track.high_score and not self.cheated:
                     self.track.set_high_score(self.score)
                     self.track.set_high_score_accuracy(self.calculate_accuracy())
                     self.track.set_high_score_layers(''.join((sorted(self.enabled_layers_keys.keys()))))
