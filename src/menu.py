@@ -70,14 +70,19 @@ class Menu:
         self.delay_time = 2  # Pre-track delay time
 
         # Audio player
-        # print(self.audio_player.get_devices())
-        self.audio_device = 0  # this should be a configurable setting
         self.audio_player = AudioPlayer(self.delay_time)
+
+        self.audio_device = 0
+        for device in self.audio_player.get_devices():
+            if device['name'] == 'External Headphones':
+                self.audio_device = device['index']
+
         err_code = self.audio_player.set_device(self.audio_device)
         if err_code:
             print('FATAL ERROR: Closing.')
             pygame.display.quit()
             return
+
         self.latency = self.audio_player.device.get_output_latency() * 0
 
         # In-game options
@@ -613,6 +618,7 @@ class Menu:
                 game = Game(self.screen, self.width, self.height, self.audio_player, track, enabled_layers_keys, self.preview_length, self.lenience, self.prune_unused_layers, self.latency, self.play_hit_sound, [self.bass_hit_sound_data, self.high_hit_sound_data])
                 game.start_game()
             self.save_library()
+            self.render_selected_track_data()
 
     def save_library(self):
         dump(self.library, open('library/saved.library', 'wb'))

@@ -236,7 +236,7 @@ class Game:
                         # Autoplayer
                         if self.cheat:
                             time_difference = abs(layer_object.get_beat(-1).time - current_song_time)
-                            if time_difference <= .01:
+                            if time_difference <= .015:
                                 beat_accuracy, color = self.score_beat(time_difference)
                                 layer_object.remove_last_beat()
                             
@@ -294,7 +294,7 @@ class Game:
                         else:
                             self.close_game()
                             return
-                    elif event.key == pygame.K_CAPSLOCK:
+                    elif event.key == pygame.K_TAB:
                         self.cheated = True
                         self.cheat = not self.cheat
                     else:
