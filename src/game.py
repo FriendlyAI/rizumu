@@ -56,6 +56,7 @@ class Game:
         self.clock = Clock()
 
         self.latency = latency
+        self.extra_time = latency + 0.5  # extra time after track ends to keep drawing main screen
         self.average_time_difference = 0
 
         self.score = 0
@@ -137,18 +138,15 @@ class Game:
         return num_hit / max(1, self.num_missed + num_hit) * 100
 
     def draw_playing_screen(self):
-        if not self.audio_player.stream_open.is_set():
-            self.playing_screen = False
-            self.score_screen = True
-            return
-
         if not self.paused:
             # Calculate time
             audio_player_time = self.audio_player.get_time()
 
-            if audio_player_time != 0:
-                self.average_time_difference += (audio_player_time - self.time - self.average_time_difference) * .02
-                self.time += self.average_time_difference * .05
+            # if track not over, subtly correct time inaccuracies
+            if self.audio_player.stream_open.is_set():
+                if audio_player_time != 0:
+                    self.average_time_difference += (audio_player_time - self.time - self.average_time_difference) * .02
+                    self.time += self.average_time_difference * .05
 
             current_song_time = self.time - self.latency
 
@@ -185,7 +183,7 @@ class Game:
                 pygame.draw.line(self.screen, (0, 0, 0), (self.track_width * 2 / 3, self.track_height - 3), (self.track_width * 2 / 3, self.track_height + 3), 7)
 
             # Draw progress bar
-            pygame.draw.line(self.screen, self.white, (0, self.height - 3), (self.track_width * (current_song_time if current_song_time > 0 else 0) / self.track.duration, self.height - 3), 5)
+            pygame.draw.line(self.screen, self.white, (0, self.height - 3), (self.track_width * min(1, (current_song_time if current_song_time > 0 else 0) / self.track.duration), self.height - 3), 5)
 
             # Draw track info labels
             self.screen.blit(self.track_title_text, (self.track_width + 20, self.height * .05))
@@ -354,7 +352,15 @@ class Game:
 
             # better frame accuracy, uses more CPU
             # self.time += self.clock.tick_busy_loop(60) / 1000
-            self.time += self.clock.tick() / 1000
+            tick = self.clock.tick() / 1000
+            # if self.audio_player.stream_open.is_set():
+            self.time += tick
+            # if track is over, set screen to score screen after extra_time elapses
+            if not self.audio_player.stream_open.is_set():
+                self.extra_time -= tick
+                if self.extra_time <= 0:
+                    self.playing_screen = False
+                    self.score_screen = True
 
         else:
             for event in pygame.event.get():

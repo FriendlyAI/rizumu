@@ -36,8 +36,10 @@ class AudioPlayer:
                 for i in range(self.pyaudio.get_device_count())
                 if self.pyaudio.get_device_info_by_index(i)['maxOutputChannels'] == self.channels]
 
-    def set_device(self, device_index):
+    def set_device(self, device_index=-1):
         try:
+            if device_index == -1:
+                device_index = self.pyaudio.get_default_output_device_info()['index']
             self.device = self.pyaudio.open(format=self.pyaudio.get_format_from_width(self.sample_width),
                                             channels=self.channels,
                                             rate=self.sample_rate,

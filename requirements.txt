@@ -1,4 +1,4 @@
 mutagen==1.47.0
-PyAudio==0.2.13
-pygame==2.5.2
-pyperclip==1.8.2
+PyAudio==0.2.14
+pygame==2.6.0
+pyperclip==1.9.0
