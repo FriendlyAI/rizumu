@@ -447,6 +447,8 @@ class Menu:
     def draw_new_track(self):
         label_selection_index = 0
         clipboard = paste()
+        if clipboard[0] == "'":
+            clipboard = clipboard[1:-1]
         new_track_filepath = clipboard if isfile(clipboard) and clipboard[clipboard.rindex('.'):] in ('.flac', '.opus', '.mp3', '.m4a') else None
         new_track = Track(new_track_filepath) if new_track_filepath else None
 
